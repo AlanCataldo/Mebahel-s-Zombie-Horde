@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 1,
+	"id": "mebahel-zombie-horde",
+	"version": "${version}",
+	"name": "Mebahel Zombie Horde",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Mebahel"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/mebahel-zombie-horde/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.mebahel.zombiehorde.MebahelZombieHorde"
+		],
+		"client": [
+			"net.mebahel.zombiehorde.MebahelZombieHordeClient"
+		],
+		"fabric-datagen": [
+			"net.mebahel.zombiehorde.MebahelZombieHordeDataGenerator"
+		]
+	},
+	"mixins": [
+		"mebahel-zombie-horde.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.16.2",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
