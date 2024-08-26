@@ -1,9 +1,11 @@
 package net.mebahel.zombiehorde.entity.ai;
 
 import net.mebahel.zombiehorde.entity.custom.ZombieHordeEntity;
+import net.mebahel.zombiehorde.util.ZombieHordeManager;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.ai.pathing.EntityNavigation;
 import net.minecraft.entity.ai.pathing.Path;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.Heightmap;
@@ -50,15 +52,36 @@ public class ModHordeGoal extends Goal {
 
             if (targetPos != null) {
                 Path path = entityNavigation.findPathTo(targetPos, 0);
+
                 if (path != null) {
                     entityNavigation.startMovingAlong(path, this.entity.isPatrolLeader() ? leaderSpeed : followSpeed);
-                } else {
-                    this.wander();
-                }
+                } else
+                    this.entity.setPatrolTarget(setRandomPatrolTarget((ServerWorld) this.entity.getWorld(), this.entity.getBlockPos()));
             } else {
                 this.wander();
             }
         }
+    }
+    public static BlockPos setRandomPatrolTarget(ServerWorld world, BlockPos pos) {
+        int x = 150 + world.random.nextInt(150);
+        int z = 150 + world.random.nextInt(150);
+
+        if (world.random.nextBoolean()) x = -x;
+        if (world.random.nextBoolean()) z = -z;
+
+        BlockPos roughTargetPos = new BlockPos(pos.getX() + x, world.getHeight(), pos.getZ() + z);
+
+        BlockPos finalTargetPos = findTopSolidBlock(world, roughTargetPos);
+
+        // Vérifier si la hauteur est correcte (ex: > 0)
+        if (finalTargetPos.getY() < world.getBottomY()) {
+            finalTargetPos = world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos);
+        }
+
+        return finalTargetPos;
+    }
+    private static BlockPos findTopSolidBlock(ServerWorld world, BlockPos pos) {
+        return world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos);
     }
 
     private ZombieHordeEntity findNewLeader() {

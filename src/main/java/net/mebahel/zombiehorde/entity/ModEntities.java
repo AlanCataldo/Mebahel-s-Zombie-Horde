@@ -12,12 +12,12 @@ import net.minecraft.util.Identifier;
 
 public class ModEntities {
     public static final EntityType<ZombieHordeEntity> ZOMBIE_HORDE  = Registry.register(
-            Registries.ENTITY_TYPE, new Identifier(MebahelZombieHorde.MOD_ID, "zombie_horde"),
+            Registries.ENTITY_TYPE, Identifier.of(MebahelZombieHorde.MOD_ID, "zombie_horde"),
             FabricEntityTypeBuilder.create(SpawnGroup.MONSTER, ZombieHordeEntity::new)
                     .dimensions(EntityDimensions.fixed(0.65f, 1.95f)).build());
 
     public static final EntityType<ZombieHordeEntity> HUSK_HORDE  = Registry.register(
-            Registries.ENTITY_TYPE, new Identifier(MebahelZombieHorde.MOD_ID, "husk_horde"),
+            Registries.ENTITY_TYPE, Identifier.of(MebahelZombieHorde.MOD_ID, "husk_horde"),
             FabricEntityTypeBuilder.create(SpawnGroup.MONSTER, ZombieHordeEntity::new)
                     .dimensions(EntityDimensions.fixed(0.65f, 1.95f)).build());
 }

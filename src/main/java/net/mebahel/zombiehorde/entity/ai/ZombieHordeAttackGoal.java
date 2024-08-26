@@ -17,9 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class ZombieHordeAttackGoal extends MeleeAttackGoal {
     private final ZombieHordeEntity zombie;
     private int ticks;
@@ -257,6 +254,10 @@ public class ZombieHordeAttackGoal extends MeleeAttackGoal {
         }
 
         this.path = this.mob.getNavigation().findPathTo(target, 1);
-        return this.path != null || this.getSquaredMaxAttackDistance(target) >= this.mob.squaredDistanceTo(target.getX(), target.getY(), target.getZ());
+        return this.path != null || getSquaredMaxAttackDistance(this.mob) >= this.mob.squaredDistanceTo(target.getX(), target.getY(), target.getZ());
+    }
+
+    protected double getSquaredMaxAttackDistance(LivingEntity entity) {
+        return 6 + entity.getWidth();
     }
 }

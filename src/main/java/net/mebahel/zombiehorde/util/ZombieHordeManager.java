@@ -42,9 +42,9 @@ public class ZombieHordeManager {
         ServerWorldEvents.LOAD.register((server, world) -> {
             if (world.getRegistryKey() == World.OVERWORLD) {
                 PersistentStateManager stateManager = world.getPersistentStateManager();
+
                 ModDifficultyState difficultyState = stateManager.getOrCreate(
-                        ModDifficultyState::fromNbt,
-                        () -> new ModDifficultyState(1),
+                        ModDifficultyState.createType(),
                         "zombie_horde_difficulty"
                 );
 
@@ -54,15 +54,21 @@ public class ZombieHordeManager {
                 System.out.println("[Mebahel's Zombie Horde] Loaded difficulty level for world " + world.getRegistryKey().getValue() + ": " + difficultyLevel);
 
                 ServerTickEvents.START_SERVER_TICK.register(serverTick -> {
-                    if (isNightTime(world) && !ModConfig.spawnInDaylight)
-                        patrolCheckCounter++;
-                    else if (ModConfig.spawnInDaylight) {
-                        patrolCheckCounter++;
+                    List<ServerPlayerEntity> players = world.getPlayers();
+                    
+                    if (!players.isEmpty()) {
+                        if (isNightTime(world) && !ModConfig.spawnInDaylight)
+                            patrolCheckCounter++;
+                        else if (ModConfig.spawnInDaylight) {
+                            patrolCheckCounter++;
+                        }
+
+                        if (patrolCheckCounter >= CHECK_INTERVAL) {
+                            patrolCheckCounter = 0;
+                            checkAndSpawnPatrol(world);
+                        }
                     }
-                    if (patrolCheckCounter >= CHECK_INTERVAL) {
-                        patrolCheckCounter = 0;
-                        checkAndSpawnPatrol(world);
-                    }
+
                     if (ModConfig.enableDifficultySystem) {
                         if (worldDifficultyLevels.get(world) == 1) {
                             netherCheckCounter++;
@@ -113,7 +119,7 @@ public class ZombieHordeManager {
         List<ServerPlayerEntity> players = world.getPlayers();
 
         for (ServerPlayerEntity player : players) {
-            if (player.getAdvancementTracker().getProgress(world.getServer().getAdvancementLoader().get(new Identifier("minecraft", "nether/root"))).isDone()) {
+            if (player.getAdvancementTracker().getProgress(world.getServer().getAdvancementLoader().get(Identifier.of("minecraft", "nether/root"))).isDone()) {
                 int difficultyLevel = 2;
                 worldDifficultyLevels.put(world, difficultyLevel);
                 difficultyState.setDifficultyLevel(difficultyLevel); // Sauvegarde la nouvelle difficulté pour ce monde
@@ -132,6 +138,7 @@ public class ZombieHordeManager {
         BlockPos groundPos = world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos);
         BlockPos leaderPos = getOffsetPosition(groundPos, random);
         BlockPos distantTarget = setRandomPatrolTarget(world, groundPos);
+        System.out.println("DISTANT TARGEEEEET :" + distantTarget);
         int difficultyLevel = worldDifficultyLevels.getOrDefault(world, 1);
         int numFollowers = 4 + (2 * difficultyLevel) + random.nextInt(1 + (2 * difficultyLevel));
 
@@ -153,8 +160,9 @@ public class ZombieHordeManager {
         leader.setPatrolLeader(true);
         leader.setPatrolTarget(distantTarget);
         leader.setWasInitiallyInPatrol(true);
-        leader.initialize(world, world.getLocalDifficulty(groundPos), SpawnReason.EVENT, null, null);
+        leader.initialize(world, world.getLocalDifficulty(groundPos), SpawnReason.NATURAL, null);
         world.spawnEntity(leader);
+        System.out.println("[PATROL TARGET DU MEMBRE] " + leader.getPatrolTarget());
     }
 
     private static void spawnPatrolMember(ServerWorld world, EntityType<? extends ZombieHordeEntity> entityType, int entityNumber,
@@ -169,9 +177,9 @@ public class ZombieHordeManager {
             member.setPosition(memberSpawnPos.getX() + 0.5, memberSpawnPos.getY(), memberSpawnPos.getZ() + 0.5);
             member.setPatrolTarget(distantTarget);
             member.setWasInitiallyInPatrol(true);
-            member.initialize(world, world.getLocalDifficulty(memberSpawnPos), SpawnReason.EVENT, null, null);
+            member.initialize(world, world.getLocalDifficulty(memberSpawnPos), SpawnReason.NATURAL, null);
             world.spawnEntity(member);
-
+            System.out.println("[PATROL TARGET DU MEMBRE] " + member.getPatrolTarget());
             currentSpawnPos = memberSpawnPos;
         }
     }
@@ -190,13 +198,26 @@ public class ZombieHordeManager {
         return basePos.add(offsetX, 0, offsetZ);
     }
 
-    private static BlockPos setRandomPatrolTarget(ServerWorld world, BlockPos pos) {
+    public static BlockPos setRandomPatrolTarget(ServerWorld world, BlockPos pos) {
         int x = 150 + world.random.nextInt(150);
         int z = 150 + world.random.nextInt(150);
 
         if (world.random.nextBoolean()) x = -x;
         if (world.random.nextBoolean()) z = -z;
 
-        return world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos.add(x, 0, z));
+        BlockPos roughTargetPos = new BlockPos(pos.getX() + x, world.getHeight(), pos.getZ() + z);
+
+        BlockPos finalTargetPos = findTopSolidBlock(world, roughTargetPos);
+
+        // Vérifier si la hauteur est correcte (ex: > 0)
+        if (finalTargetPos.getY() == -64) {
+            finalTargetPos = setRandomPatrolTarget(world, pos);
+        }
+
+        return finalTargetPos;
+    }
+
+    private static BlockPos findTopSolidBlock(ServerWorld world, BlockPos pos) {
+        return world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos);
     }
 }
