@@ -7,8 +7,11 @@ import net.mebahel.zombiehorde.MebahelZombieHorde;
 import net.mebahel.zombiehorde.entity.ModEntities;
 import net.mebahel.zombiehorde.entity.custom.ZombieHordeEntity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
@@ -138,7 +141,6 @@ public class ZombieHordeManager {
         BlockPos groundPos = world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos);
         BlockPos leaderPos = getOffsetPosition(groundPos, random);
         BlockPos distantTarget = setRandomPatrolTarget(world, groundPos);
-        System.out.println("DISTANT TARGEEEEET :" + distantTarget);
         int difficultyLevel = worldDifficultyLevels.getOrDefault(world, 1);
         int numFollowers = 4 + (2 * difficultyLevel) + random.nextInt(1 + (2 * difficultyLevel));
 
@@ -146,12 +148,12 @@ public class ZombieHordeManager {
                 ? ModEntities.HUSK_HORDE
                 : ModEntities.ZOMBIE_HORDE;
 
-        spawnPatrolLeader(world, entityType, leaderPos, distantTarget, random, patrolId);
-        spawnPatrolMember(world, entityType, numFollowers, groundPos, distantTarget, random, patrolId);
+        spawnPatrolLeader(world, entityType, leaderPos, distantTarget, random, patrolId, difficultyLevel);
+        spawnPatrolMember(world, entityType, numFollowers, groundPos, distantTarget, random, patrolId, difficultyLevel);
     }
 
     private static void spawnPatrolLeader(ServerWorld world, EntityType<? extends ZombieHordeEntity> entityType,
-                                          BlockPos groundPos, BlockPos distantTarget, Random random, UUID patrolId) {
+                                          BlockPos groundPos, BlockPos distantTarget, Random random, UUID patrolId, int difficultyLevel) {
         ZombieHordeEntity leader = new ZombieHordeEntity(entityType, world);
         leader.setPatrolId(patrolId.toString());
         BlockPos leaderPos = getOffsetPosition(groundPos, random);
@@ -161,12 +163,12 @@ public class ZombieHordeManager {
         leader.setPatrolTarget(distantTarget);
         leader.setWasInitiallyInPatrol(true);
         leader.initialize(world, world.getLocalDifficulty(groundPos), SpawnReason.NATURAL, null);
+        equipWithGear(leader, random, difficultyLevel);
         world.spawnEntity(leader);
-        System.out.println("[PATROL TARGET DU MEMBRE] " + leader.getPatrolTarget());
     }
 
     private static void spawnPatrolMember(ServerWorld world, EntityType<? extends ZombieHordeEntity> entityType, int entityNumber,
-                                          BlockPos initialPos, BlockPos distantTarget, Random random, UUID patrolId) {
+                                          BlockPos initialPos, BlockPos distantTarget, Random random, UUID patrolId, int difficultyLevel) {
         BlockPos currentSpawnPos = initialPos;
 
         for (int i = 0; i < entityNumber; i++) {
@@ -178,8 +180,8 @@ public class ZombieHordeManager {
             member.setPatrolTarget(distantTarget);
             member.setWasInitiallyInPatrol(true);
             member.initialize(world, world.getLocalDifficulty(memberSpawnPos), SpawnReason.NATURAL, null);
+            equipWithGear(member, random, difficultyLevel);
             world.spawnEntity(member);
-            System.out.println("[PATROL TARGET DU MEMBRE] " + member.getPatrolTarget());
             currentSpawnPos = memberSpawnPos;
         }
     }
@@ -209,7 +211,6 @@ public class ZombieHordeManager {
 
         BlockPos finalTargetPos = findTopSolidBlock(world, roughTargetPos);
 
-        // Vérifier si la hauteur est correcte (ex: > 0)
         if (finalTargetPos.getY() == -64) {
             finalTargetPos = setRandomPatrolTarget(world, pos);
         }
@@ -219,5 +220,26 @@ public class ZombieHordeManager {
 
     private static BlockPos findTopSolidBlock(ServerWorld world, BlockPos pos) {
         return world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos);
+    }
+
+    private static void equipWithGear(ZombieHordeEntity zombie, Random random, int difficultyLevel) {
+        float armorChance = 0.06f * difficultyLevel;
+        float weaponChance = 0.1f * difficultyLevel;
+
+        if (random.nextFloat() < armorChance) {
+            zombie.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
+        }
+        if (random.nextFloat() < armorChance) {
+            zombie.equipStack(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+        }
+        if (random.nextFloat() < armorChance) {
+            zombie.equipStack(EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
+        }
+        if (random.nextFloat() < armorChance) {
+            zombie.equipStack(EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
+        }
+        if (random.nextFloat() < weaponChance) {
+            zombie.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+        }
     }
 }

@@ -4,6 +4,7 @@ import net.mebahel.zombiehorde.entity.ai.ModHordeGoal;
 import net.mebahel.zombiehorde.entity.ai.ZombieHordeAttackGoal;
 import net.mebahel.zombiehorde.util.ModConfig;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.ai.goal.*;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
@@ -29,6 +30,7 @@ import java.util.Objects;
 public class ZombieHordeEntity extends ZombieEntity {
     public ZombieHordeEntity(EntityType<? extends ZombieHordeEntity> entityType, World world) {
         super(entityType, world);
+        this.setPersistent();
     }
 
     public void setGlassBreakingProgress(BlockPos pos, int progress) {
@@ -111,6 +113,13 @@ public class ZombieHordeEntity extends ZombieEntity {
     @Override
     public void tick() {
         super.tick();
+        double maxDistance = 300.0;
+
+        PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, maxDistance);
+
+        if (nearestPlayer == null || this.distanceTo(nearestPlayer) > maxDistance) {
+            this.discard();
+        }
     }
 
     protected void initDataTracker(Builder builder) {
