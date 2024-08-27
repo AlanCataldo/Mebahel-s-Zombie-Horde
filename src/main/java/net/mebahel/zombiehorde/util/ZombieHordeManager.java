@@ -27,7 +27,7 @@ import java.util.Random;
 import java.util.UUID;
 
 public class ZombieHordeManager {
-    private static final int CHECK_INTERVAL = 10 * 60 * ModConfig.patrolSpawnDelay;
+    private static final int CHECK_INTERVAL = 20 * 60 * ModConfig.patrolSpawnDelay;
     private static final int NETHER_CHECK_INTERVAL = 300; // 1 minute
     private static int patrolCheckCounter = 0;
     private static int netherCheckCounter = 0;
