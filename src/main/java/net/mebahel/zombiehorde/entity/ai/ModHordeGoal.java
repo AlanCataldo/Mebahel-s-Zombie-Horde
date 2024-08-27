@@ -4,6 +4,7 @@ import net.mebahel.zombiehorde.entity.custom.ZombieHordeEntity;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.ai.pathing.EntityNavigation;
 import net.minecraft.entity.ai.pathing.Path;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.Heightmap;
@@ -44,26 +45,65 @@ public class ModHordeGoal extends Goal {
     public void tick() {
         EntityNavigation entityNavigation = this.entity.getNavigation();
 
+        // Check if the entity is idle (not currently moving)
         if (entityNavigation.isIdle()) {
-            BlockPos targetPos = this.entity.isPatrolLeader() ? this.entity.getPatrolTarget() :
-                    this.assignedLeader != null ? this.assignedLeader.getPatrolTarget() : null;
+            // Ensure the assigned leader is valid
+            if (this.assignedLeader == null || this.assignedLeader.isDead()) {
+                this.assignedLeader = findNewLeader();
+            }
 
+            // Get the target position from the leader
+            BlockPos targetPos = this.assignedLeader != null ? this.assignedLeader.getPatrolTarget() : null;
+
+            // If this entity is not the leader, ensure it has the same patrol target as the leader
+            if (!this.entity.isPatrolLeader() && targetPos != null && !targetPos.equals(this.entity.getPatrolTarget())) {
+                this.entity.setPatrolTarget(targetPos);
+            }
+
+            // If there's a valid target position, attempt to pathfind to it
             if (targetPos != null) {
                 Path path = entityNavigation.findPathTo(targetPos, 0);
+
                 if (path != null) {
                     entityNavigation.startMovingAlong(path, this.entity.isPatrolLeader() ? leaderSpeed : followSpeed);
                 } else {
-                    this.wander();
+                    // Only the leader should recalculate the patrol target if pathfinding fails
+                    if (this.entity.isPatrolLeader()) {
+                        BlockPos newTarget = setRandomPatrolTarget((ServerWorld) this.entity.getWorld(), this.entity.getBlockPos());
+                        this.entity.setPatrolTarget(newTarget);
+                    }
                 }
             } else {
                 this.wander();
             }
         }
     }
+    public static BlockPos setRandomPatrolTarget(ServerWorld world, BlockPos pos) {
+        int x = 150 + world.random.nextInt(150);
+        int z = 150 + world.random.nextInt(150);
+
+        if (world.random.nextBoolean()) x = -x;
+        if (world.random.nextBoolean()) z = -z;
+
+        BlockPos roughTargetPos = new BlockPos(pos.getX() + x, world.getHeight(), pos.getZ() + z);
+
+        BlockPos finalTargetPos = findTopSolidBlock(world, roughTargetPos);
+
+        // Validate the final position to ensure it is within world bounds
+        if (finalTargetPos.getY() < world.getBottomY() || finalTargetPos.getY() > world.getTopY()) {
+            finalTargetPos = world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos);
+        }
+
+        return finalTargetPos;
+    }
+    private static BlockPos findTopSolidBlock(ServerWorld world, BlockPos pos) {
+        return world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos);
+    }
+
 
     private ZombieHordeEntity findNewLeader() {
         // Trouver tous les membres de la patrouille
-        List<ZombieHordeEntity> patrolMembers = this.entity.getWorld().getEntitiesByClass(ZombieHordeEntity.class, this.entity.getBoundingBox().expand(32.0), e -> e.isPartOfSamePatrol(this.entity));
+        List<ZombieHordeEntity> patrolMembers = this.entity.getWorld().getEntitiesByClass(ZombieHordeEntity.class, this.entity.getBoundingBox().expand(64.0), e -> e.isPartOfSamePatrol(this.entity));
 
         // Vérifier s'il y a déjà un leader
         for (ZombieHordeEntity member : patrolMembers) {
