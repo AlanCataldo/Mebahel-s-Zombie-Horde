@@ -20,11 +20,7 @@ import net.minecraft.world.Heightmap;
 import net.minecraft.world.PersistentStateManager;
 import net.minecraft.world.World;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 public class ZombieHordeManager {
     private static final int CHECK_INTERVAL = 20 * 60 * ModConfig.patrolSpawnDelay;
@@ -32,8 +28,8 @@ public class ZombieHordeManager {
     private static int patrolCheckCounter = 0;
     private static int netherCheckCounter = 0;
 
-    // Utilisation d'une map pour stocker la difficulté par monde
     private static final Map<ServerWorld, Integer> worldDifficultyLevels = new HashMap<>();
+    private static final Map<ServerWorld, ServerTickEvents.EndTick> registeredListeners = new HashMap<>();
 
     public static void register() {
         if (!ModConfig.patrolSpawning) {
@@ -42,6 +38,7 @@ public class ZombieHordeManager {
         }
 
         MebahelZombieHorde.LOGGER.info("[Mebahel's Zombie Horde] Registering zombie horde spawning for " + MebahelZombieHorde.MOD_ID + ".");
+
         ServerWorldEvents.LOAD.register((server, world) -> {
             if (world.getRegistryKey() == World.OVERWORLD) {
                 PersistentStateManager stateManager = world.getPersistentStateManager();
@@ -51,39 +48,59 @@ public class ZombieHordeManager {
                         "zombie_horde_difficulty"
                 );
 
-                // Charger le niveau de difficulté pour le monde actuel
                 int difficultyLevel = difficultyState.getDifficultyLevel();
                 worldDifficultyLevels.put(world, difficultyLevel);
                 System.out.println("[Mebahel's Zombie Horde] Loaded difficulty level for world " + world.getRegistryKey().getValue() + ": " + difficultyLevel);
 
-                ServerTickEvents.START_SERVER_TICK.register(serverTick -> {
-                    if (isNightTime(world) && !ModConfig.spawnInDaylight)
-                        patrolCheckCounter++;
-                    else if (ModConfig.spawnInDaylight) {
-                        patrolCheckCounter++;
-                    }
-                    if (patrolCheckCounter >= CHECK_INTERVAL) {
-                        patrolCheckCounter = 0;
-                        checkAndSpawnPatrol(world);
-                    }
-                    if (ModConfig.enableDifficultySystem) {
-                        if (worldDifficultyLevels.get(world) == 1) {
-                            netherCheckCounter++;
-                            if (netherCheckCounter >= NETHER_CHECK_INTERVAL) {
-                                netherCheckCounter = 0;
-                                checkNetherVisit(world, difficultyState);
-                            }
+                // Enregistrer un nouveau listener pour ce monde
+                ServerTickEvents.EndTick listener = serverTick -> {
+                    if (serverTick.getWorld(World.OVERWORLD) == world) {
+                        if (isNightTime(world) && !ModConfig.spawnInDaylight) {
+                            patrolCheckCounter++;
+                        } else if (ModConfig.spawnInDaylight) {
+                            patrolCheckCounter++;
                         }
-                    } else {
-                        worldDifficultyLevels.put(world, 1);
+
+                        if (patrolCheckCounter >= CHECK_INTERVAL) {
+                            patrolCheckCounter = 0;
+                            checkAndSpawnPatrol(world);
+                        }
+
+                        if (ModConfig.enableDifficultySystem) {
+                            if (worldDifficultyLevels.get(world) == 1) {
+                                netherCheckCounter++;
+                                if (netherCheckCounter >= NETHER_CHECK_INTERVAL) {
+                                    netherCheckCounter = 0;
+                                    checkNetherVisit(world, difficultyState);
+                                }
+                            }
+                        } else {
+                            worldDifficultyLevels.put(world, 1);
+                        }
                     }
-                });
+                };
+
+                ServerTickEvents.END_SERVER_TICK.register(listener);
+                registeredListeners.put(world, listener);
+            }
+        });
+
+        ServerWorldEvents.UNLOAD.register((server, world) -> {
+            if (world.getRegistryKey() == World.OVERWORLD) {
+                registeredListeners.remove(world);
+                MebahelZombieHorde.LOGGER.info("[Mebahel's Zombie Horde] World unloaded, event listener removed.");
             }
         });
     }
 
     private static void checkAndSpawnPatrol(ServerWorld world) {
         List<ServerPlayerEntity> players = world.getPlayers();
+        System.out.println("Number of players: " + players.size());
+
+        if (players.isEmpty()) {
+            System.out.println("No players found in world: " + world.getRegistryKey().getValue());
+            return;
+        }
 
         if (!players.isEmpty()) {
             Random random = new Random();
