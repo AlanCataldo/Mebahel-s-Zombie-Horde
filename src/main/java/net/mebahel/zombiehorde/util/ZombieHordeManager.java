@@ -34,6 +34,7 @@ public class ZombieHordeManager {
 
     // Utilisation d'une map pour stocker la difficulté par monde
     private static final Map<ServerWorld, Integer> worldDifficultyLevels = new HashMap<>();
+    private static final Map<ServerWorld, ServerTickEvents.EndTick> registeredListeners = new HashMap<>();
 
     public static void register() {
         if (!ModConfig.patrolSpawning) {
@@ -42,6 +43,7 @@ public class ZombieHordeManager {
         }
 
         MebahelZombieHorde.LOGGER.info("[Mebahel's Zombie Horde] Registering zombie horde spawning for " + MebahelZombieHorde.MOD_ID + ".");
+
         ServerWorldEvents.LOAD.register((server, world) -> {
             if (world.getRegistryKey() == World.OVERWORLD) {
                 PersistentStateManager stateManager = world.getPersistentStateManager();
@@ -51,33 +53,46 @@ public class ZombieHordeManager {
                         "zombie_horde_difficulty"
                 );
 
-                // Charger le niveau de difficulté pour le monde actuel
                 int difficultyLevel = difficultyState.getDifficultyLevel();
                 worldDifficultyLevels.put(world, difficultyLevel);
                 System.out.println("[Mebahel's Zombie Horde] Loaded difficulty level for world " + world.getRegistryKey().getValue() + ": " + difficultyLevel);
 
-                ServerTickEvents.START_SERVER_TICK.register(serverTick -> {
-                    if (isNightTime(world) && !ModConfig.spawnInDaylight)
-                        patrolCheckCounter++;
-                    else if (ModConfig.spawnInDaylight) {
-                        patrolCheckCounter++;
-                    }
-                    if (patrolCheckCounter >= CHECK_INTERVAL) {
-                        patrolCheckCounter = 0;
-                        checkAndSpawnPatrol(world);
-                    }
-                    if (ModConfig.enableDifficultySystem) {
-                        if (worldDifficultyLevels.get(world) == 1) {
-                            netherCheckCounter++;
-                            if (netherCheckCounter >= NETHER_CHECK_INTERVAL) {
-                                netherCheckCounter = 0;
-                                checkNetherVisit(world, difficultyState);
-                            }
+                ServerTickEvents.EndTick listener = serverTick -> {
+                    if (serverTick.getWorld(World.OVERWORLD) == world) {
+                        if (isNightTime(world) && !ModConfig.spawnInDaylight) {
+                            patrolCheckCounter++;
+                        } else if (ModConfig.spawnInDaylight) {
+                            patrolCheckCounter++;
                         }
-                    } else {
-                        worldDifficultyLevels.put(world, 1);
+
+                        if (patrolCheckCounter >= CHECK_INTERVAL) {
+                            patrolCheckCounter = 0;
+                            checkAndSpawnPatrol(world);
+                        }
+
+                        if (ModConfig.enableDifficultySystem) {
+                            if (worldDifficultyLevels.get(world) == 1) {
+                                netherCheckCounter++;
+                                if (netherCheckCounter >= NETHER_CHECK_INTERVAL) {
+                                    netherCheckCounter = 0;
+                                    checkNetherVisit(world, difficultyState);
+                                }
+                            }
+                        } else {
+                            worldDifficultyLevels.put(world, 1);
+                        }
                     }
-                });
+                };
+
+                ServerTickEvents.END_SERVER_TICK.register(listener);
+                registeredListeners.put(world, listener);
+            }
+        });
+
+        ServerWorldEvents.UNLOAD.register((server, world) -> {
+            if (world.getRegistryKey() == World.OVERWORLD) {
+                registeredListeners.remove(world);
+                MebahelZombieHorde.LOGGER.info("[Mebahel's Zombie Horde] World unloaded, event listener removed.");
             }
         });
     }
