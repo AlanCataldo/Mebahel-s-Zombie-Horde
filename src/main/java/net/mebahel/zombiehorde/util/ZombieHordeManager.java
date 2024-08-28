@@ -52,7 +52,6 @@ public class ZombieHordeManager {
                 worldDifficultyLevels.put(world, difficultyLevel);
                 System.out.println("[Mebahel's Zombie Horde] Loaded difficulty level for world " + world.getRegistryKey().getValue() + ": " + difficultyLevel);
 
-                // Enregistrer un nouveau listener pour ce monde
                 ServerTickEvents.EndTick listener = serverTick -> {
                     if (serverTick.getWorld(World.OVERWORLD) == world) {
                         if (isNightTime(world) && !ModConfig.spawnInDaylight) {
