@@ -16,6 +16,8 @@ public class ModConfig {
     public static boolean enableDifficultySystem = true;
     public static boolean patrolSpawning = true;
     public static int patrolSpawnDelay = 20;
+    public static float hordeSpawnChance = 0.8f;
+    public static int randomNumberHordeReinforcements = 0;
 
 
     public static void loadConfig(File configDir) {
@@ -46,11 +48,23 @@ public class ModConfig {
                     data.hordeSpawnDelay = 20;
                     updated = true;
                 }
+                if (data.hordeSpawnChance == null || data.hordeSpawnChance < 0 || data.hordeSpawnChance > 1) {
+                    data.hordeSpawnChance = 0.8f;
+                    updated = true;
+                }
+
+                if (data.randomNumberHordeReinforcements == null || data.randomNumberHordeReinforcements < 0
+                        || data.randomNumberHordeReinforcements > 10) {
+                    data.randomNumberHordeReinforcements = 0;
+                    updated = true;
+                }
 
                 spawnInDaylight = data.spawnInDayLight;
                 enableDifficultySystem = data.enableDifficultySystem;
                 patrolSpawning = data.hordeSpawning;
                 patrolSpawnDelay = data.hordeSpawnDelay;
+                hordeSpawnChance = data.hordeSpawnChance;
+                randomNumberHordeReinforcements = data.randomNumberHordeReinforcements;
 
 
                 if (updated) {
@@ -66,7 +80,8 @@ public class ModConfig {
 
     public static void saveConfig(File configDir) {
         File configFile = new File(configDir, CONFIG_FILE_NAME);
-        ConfigData data = new ConfigData(spawnInDaylight ,enableDifficultySystem, patrolSpawning, patrolSpawnDelay);
+        ConfigData data = new ConfigData(spawnInDaylight ,enableDifficultySystem, patrolSpawning, patrolSpawnDelay, hordeSpawnChance,
+                randomNumberHordeReinforcements);
         try (FileWriter writer = new FileWriter(configFile)) {
             GSON.toJson(data, writer);
         } catch (IOException e) {
@@ -79,12 +94,17 @@ public class ModConfig {
         Boolean enableDifficultySystem;
         Boolean hordeSpawning;
         Integer hordeSpawnDelay;
+        Float hordeSpawnChance;
+        Integer randomNumberHordeReinforcements;
 
-        ConfigData(boolean spawnInDayLight, boolean enableDifficultySystem, boolean hordeSpawning, int hordeSpawnDelay) {
+        ConfigData(boolean spawnInDayLight, boolean enableDifficultySystem, boolean hordeSpawning, int hordeSpawnDelay,
+                   float hordeSpawnChance, int randomNumberHordeReinforcements) {
             this.spawnInDayLight = spawnInDayLight;
             this.enableDifficultySystem = enableDifficultySystem;
             this.hordeSpawning = hordeSpawning;
             this.hordeSpawnDelay = hordeSpawnDelay;
+            this.hordeSpawnChance = hordeSpawnChance;
+            this.randomNumberHordeReinforcements = randomNumberHordeReinforcements;
         }
     }
 }

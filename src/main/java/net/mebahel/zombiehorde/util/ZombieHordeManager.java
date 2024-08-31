@@ -28,12 +28,11 @@ import java.util.UUID;
 
 public class ZombieHordeManager {
     private static final int CHECK_INTERVAL = 20 * 60 * ModConfig.patrolSpawnDelay;
-    private static final int NETHER_CHECK_INTERVAL = 300; // 1 minute
+    private static final int NETHER_CHECK_INTERVAL = 300;
     private static int patrolCheckCounter = 0;
     private static int netherCheckCounter = 0;
-
-    // Utilisation d'une map pour stocker la difficulté par monde
     private static final Map<ServerWorld, Integer> worldDifficultyLevels = new HashMap<>();
+    private static final Map<ServerWorld, ServerTickEvents.EndTick> registeredListeners = new HashMap<>();
 
     public static void register() {
         if (!ModConfig.patrolSpawning) {
@@ -56,7 +55,7 @@ public class ZombieHordeManager {
                 worldDifficultyLevels.put(world, difficultyLevel);
                 System.out.println("[Mebahel's Zombie Horde] Loaded difficulty level for world " + world.getRegistryKey().getValue() + ": " + difficultyLevel);
 
-                ServerTickEvents.START_SERVER_TICK.register(serverTick -> {
+                ServerTickEvents.EndTick listener = serverTick -> {
                     List<ServerPlayerEntity> players = world.getPlayers();
                     
                     if (!players.isEmpty()) {
@@ -67,8 +66,15 @@ public class ZombieHordeManager {
                         }
 
                         if (patrolCheckCounter >= CHECK_INTERVAL) {
+                            Random random = new Random();
+                            float randomValue = random.nextFloat();
+                            float spawnChance = ModConfig.hordeSpawnChance;
+
                             patrolCheckCounter = 0;
-                            checkAndSpawnPatrol(world);
+                            if (randomValue <= spawnChance)
+                                checkAndSpawnPatrol(world);
+                            else
+                                System.out.println("[Mebahel's Zombie Horde] You are lucky... The Horde didn't spawn this time...");
                         }
                     }
 
@@ -83,7 +89,15 @@ public class ZombieHordeManager {
                     } else {
                         worldDifficultyLevels.put(world, 1);
                     }
-                });
+                };
+                ServerTickEvents.END_SERVER_TICK.register(listener);
+                registeredListeners.put(world, listener);
+            }
+        });
+        ServerWorldEvents.UNLOAD.register((server, world) -> {
+            if (world.getRegistryKey() == World.OVERWORLD) {
+                registeredListeners.remove(world);
+                MebahelZombieHorde.LOGGER.info("[Mebahel's Zombie Horde] World unloaded, event listener removed.");
             }
         });
     }
@@ -143,6 +157,15 @@ public class ZombieHordeManager {
         BlockPos distantTarget = setRandomPatrolTarget(world, groundPos);
         int difficultyLevel = worldDifficultyLevels.getOrDefault(world, 1);
         int numFollowers = 4 + (2 * difficultyLevel) + random.nextInt(1 + (2 * difficultyLevel));
+
+        if (ModConfig.randomNumberHordeReinforcements > 0) {
+            int reinforcement = random.nextInt(ModConfig.randomNumberHordeReinforcements);
+            numFollowers += reinforcement;
+            if (reinforcement == 0 || reinforcement == 1)
+                System.out.println("[Mebahel's Zombie Horde] The Horde has been reinforced by " + reinforcement + " Zombie.");
+            else
+                System.out.println("[Mebahel's Zombie Horde] The Horde has been reinforced by " + reinforcement + " Zombies.");
+        }
 
         EntityType<? extends ZombieHordeEntity> entityType = world.getBiome(player.getBlockPos()).isIn(ConventionalBiomeTags.DESERT)
                 ? ModEntities.HUSK_HORDE
