@@ -162,7 +162,12 @@ public class ZombieHordeManager {
         int numFollowers = 4 + (2 * difficultyLevel) + random.nextInt(1 + (2 * difficultyLevel));
 
         if (ModConfig.randomNumberHordeReinforcements > 0) {
-            numFollowers += random.nextInt(ModConfig.randomNumberHordeReinforcements);
+            int reinforcement = random.nextInt(ModConfig.randomNumberHordeReinforcements);
+            numFollowers += reinforcement;
+            if (reinforcement == 1)
+                System.out.println("[Mebahel's Zombie Horde] The Horde has been reinforced by " + reinforcement + " Zombie.");
+            else
+                System.out.println("[Mebahel's Zombie Horde] The Horde has been reinforced by " + reinforcement + " Zombies.");
         }
 
         EntityType<? extends ZombieHordeEntity> entityType = world.getBiome(player.getBlockPos()).isIn(ConventionalBiomeTags.DESERT)
