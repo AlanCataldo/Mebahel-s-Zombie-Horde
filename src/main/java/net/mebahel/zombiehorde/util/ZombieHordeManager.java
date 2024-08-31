@@ -185,7 +185,7 @@ public class ZombieHordeManager {
         leader.setPatrolLeader(true);
         leader.setPatrolTarget(distantTarget);
         leader.setWasInitiallyInPatrol(true);
-        leader.initialize(world, world.getLocalDifficulty(groundPos), SpawnReason.NATURAL, null);
+        leader.initialize(world, world.getLocalDifficulty(groundPos), SpawnReason.NATURAL, null, null);
         equipWithGear(leader, random, difficultyLevel);
         world.spawnEntity(leader);
     }
@@ -202,7 +202,7 @@ public class ZombieHordeManager {
             member.setPosition(memberSpawnPos.getX() + 0.5, memberSpawnPos.getY(), memberSpawnPos.getZ() + 0.5);
             member.setPatrolTarget(distantTarget);
             member.setWasInitiallyInPatrol(true);
-            member.initialize(world, world.getLocalDifficulty(memberSpawnPos), SpawnReason.NATURAL, null);
+            member.initialize(world, world.getLocalDifficulty(memberSpawnPos), SpawnReason.NATURAL, null, null);
             equipWithGear(member, random, difficultyLevel);
             world.spawnEntity(member);
             currentSpawnPos = memberSpawnPos;

@@ -22,7 +22,6 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
-import net.minecraft.entity.data.DataTracker.Builder;
 
 import java.util.List;
 import java.util.Objects;
@@ -122,9 +121,9 @@ public class ZombieHordeEntity extends ZombieEntity {
         }
     }
 
-    protected void initDataTracker(Builder builder) {
-        super.initDataTracker(builder);
-        builder.add(PATROL_UUID, "");
+    protected void initDataTracker() {
+        super.initDataTracker();
+        this.dataTracker.startTracking(PATROL_UUID, "");
     }
 
     @Override
@@ -179,7 +178,9 @@ public class ZombieHordeEntity extends ZombieEntity {
         this.setPatrolLeader(nbt.getBoolean("PatrolLeader"));
         this.setPatrolling(nbt.getBoolean("Patrolling"));
         this.setWasInitiallyInPatrol(nbt.getBoolean("WasPatrolling"));
-        NbtHelper.toBlockPos(nbt, "PatrolTarget").ifPresent(this::setPatrolTarget);
+        if (nbt.contains("PatrolTarget")) {
+            this.setPatrolTarget(NbtHelper.toBlockPos(nbt.getCompound("PatrolTarget")));
+        }
     }
 
     @Override

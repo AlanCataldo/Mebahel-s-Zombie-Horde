@@ -2,8 +2,9 @@ package net.mebahel.zombiehorde.util;
 
 import net.minecraft.datafixer.DataFixTypes;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.world.PersistentState;
+import java.util.function.Supplier;
+import java.util.function.Function;
 
 public class ModDifficultyState extends PersistentState {
     private int difficultyLevel;
@@ -21,23 +22,27 @@ public class ModDifficultyState extends PersistentState {
         this.markDirty(); // Marquer comme modifié pour être sauvegardé
     }
 
-    public static ModDifficultyState fromNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    // Méthode simplifiée fromNbt pour correspondre à la signature Function<NbtCompound, T>
+    public static ModDifficultyState fromNbt(NbtCompound nbt) {
         ModDifficultyState state = new ModDifficultyState();
         state.difficultyLevel = nbt.getInt("difficultyLevel");
         return state;
     }
 
     @Override
-    public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    public NbtCompound writeNbt(NbtCompound nbt) {
         nbt.putInt("difficultyLevel", difficultyLevel);
         return nbt;
     }
 
     // Méthode pour créer un PersistentState.Type
     public static PersistentState.Type<ModDifficultyState> createType() {
+        Supplier<ModDifficultyState> supplier = ModDifficultyState::new;
+        Function<NbtCompound, ModDifficultyState> function = ModDifficultyState::fromNbt;
+
         return new PersistentState.Type<>(
-                ModDifficultyState::new, // Supplier pour créer un nouvel état par défaut
-                ModDifficultyState::fromNbt, // BiFunction pour désérialiser depuis NBT
+                supplier,  // Supplier pour créer un nouvel état par défaut
+                function,  // Function pour désérialiser depuis NBT
                 DataFixTypes.LEVEL // Type de correction des données
         );
     }
