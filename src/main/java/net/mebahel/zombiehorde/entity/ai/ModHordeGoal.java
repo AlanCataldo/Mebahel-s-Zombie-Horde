@@ -89,7 +89,6 @@ public class ModHordeGoal extends Goal {
 
         BlockPos finalTargetPos = findTopSolidBlock(world, roughTargetPos);
 
-        // Validate the final position to ensure it is within world bounds
         if (finalTargetPos.getY() < world.getBottomY() || finalTargetPos.getY() > world.getTopY()) {
             finalTargetPos = world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos);
         }
@@ -102,17 +101,14 @@ public class ModHordeGoal extends Goal {
 
 
     private ZombieHordeEntity findNewLeader() {
-        // Trouver tous les membres de la patrouille
         List<ZombieHordeEntity> patrolMembers = this.entity.getWorld().getEntitiesByClass(ZombieHordeEntity.class, this.entity.getBoundingBox().expand(64.0), e -> e.isPartOfSamePatrol(this.entity));
 
-        // Vérifier s'il y a déjà un leader
         for (ZombieHordeEntity member : patrolMembers) {
             if (!member.isDead() && member.isPatrolLeader()) {
                 return member;
             }
         }
 
-        // Si aucun autre leader n'existe, promouvoir le premier membre non mort qui n'est pas déjà un leader
         for (ZombieHordeEntity member : patrolMembers) {
             if (!member.isDead() && !member.isPatrolLeader()) {
                 member.setPatrolLeader(true);
