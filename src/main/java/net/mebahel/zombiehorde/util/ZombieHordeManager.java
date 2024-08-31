@@ -61,8 +61,15 @@ public class ZombieHordeManager {
                         }
 
                         if (patrolCheckCounter >= CHECK_INTERVAL) {
+                            Random random = new Random();
+                            float randomValue = random.nextFloat();
+                            float spawnChance = ModConfig.hordeSpawnChance;
+
                             patrolCheckCounter = 0;
-                            checkAndSpawnPatrol(world);
+                            if (randomValue <= spawnChance)
+                                checkAndSpawnPatrol(world);
+                            else
+                                System.out.println("[Mebahel's Zombie Horde] You are lucky... The Horde didn't spawn this time...");
                         }
 
                         if (ModConfig.enableDifficultySystem) {
@@ -153,6 +160,10 @@ public class ZombieHordeManager {
         BlockPos distantTarget = setRandomPatrolTarget(world, groundPos);
         int difficultyLevel = worldDifficultyLevels.getOrDefault(world, 1);
         int numFollowers = 4 + (2 * difficultyLevel) + random.nextInt(1 + (2 * difficultyLevel));
+
+        if (ModConfig.randomNumberHordeReinforcements > 0) {
+            numFollowers += random.nextInt(ModConfig.randomNumberHordeReinforcements);
+        }
 
         EntityType<? extends ZombieHordeEntity> entityType = world.getBiome(player.getBlockPos()).isIn(ConventionalBiomeTags.DESERT)
                 ? ModEntities.HUSK_HORDE
