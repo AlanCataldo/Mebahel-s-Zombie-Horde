@@ -4,6 +4,7 @@ import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
+import net.mebahel.zombiehorde.entity.custom.ZombieHordeEntity;
 import net.mebahel.zombiehorde.util.ModConfig;
 import net.mebahel.zombiehorde.util.ZombieHordeManager;
 import net.minecraft.entity.mob.HuskEntity;
@@ -24,8 +25,8 @@ public class MebahelZombieHorde implements ModInitializer {
 	public void onInitialize() {
 		File configDir = new File(FabricLoader.getInstance().getConfigDir().toFile(), MebahelZombieHorde.MOD_ID);
 		ModConfig.loadConfig(configDir);
-		FabricDefaultAttributeRegistry.register(ZOMBIE_HORDE, ZombieEntity.createZombieAttributes());
-		FabricDefaultAttributeRegistry.register(HUSK_HORDE, HuskEntity.createZombieAttributes());
+		FabricDefaultAttributeRegistry.register(ZOMBIE_HORDE, ZombieHordeEntity.createZombieAttributes());
+		FabricDefaultAttributeRegistry.register(HUSK_HORDE, ZombieHordeEntity.createZombieAttributes());
 		ZombieHordeManager.register();
 		LOGGER.info("[Mebahel's Zombie Horde] Initialization complete.");
 	}

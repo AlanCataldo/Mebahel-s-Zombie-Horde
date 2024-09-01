@@ -66,15 +66,17 @@ public class ZombieHordeManager {
                         }
 
                         if (patrolCheckCounter >= CHECK_INTERVAL) {
-                            Random random = new Random();
-                            float randomValue = random.nextFloat();
-                            float spawnChance = ModConfig.hordeSpawnChance;
+                            for (int i = 0; i < ModConfig.hordeNumber; i++) {
+                                Random random = new Random();
+                                float randomValue = random.nextFloat();
+                                float spawnChance = ModConfig.hordeSpawnChance;
 
-                            patrolCheckCounter = 0;
-                            if (randomValue <= spawnChance)
-                                checkAndSpawnPatrol(world);
-                            else
-                                System.out.println("[Mebahel's Zombie Horde] You are lucky... The Horde didn't spawn this time...");
+                                patrolCheckCounter = 0;
+                                if (randomValue <= spawnChance)
+                                    checkAndSpawnPatrol(world);
+                                else
+                                    System.out.println("[Mebahel's Zombie Horde] You are lucky... The Horde didn't spawn this time...");
+                            }
                         }
                     }
 
