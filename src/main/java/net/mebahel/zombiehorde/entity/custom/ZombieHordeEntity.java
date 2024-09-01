@@ -6,9 +6,12 @@ import net.mebahel.zombiehorde.util.ModConfig;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.ai.goal.*;
+import net.minecraft.entity.attribute.DefaultAttributeContainer;
+import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.entity.mob.ZombifiedPiglinEntity;
 import net.minecraft.entity.passive.IronGolemEntity;
@@ -186,5 +189,15 @@ public class ZombieHordeEntity extends ZombieEntity {
     @Override
     public boolean canBreakDoors() {
         return true;
+    }
+
+    public static DefaultAttributeContainer.Builder createZombieAttributes() {
+        return HostileEntity.createHostileAttributes()
+                .add(EntityAttributes.GENERIC_FOLLOW_RANGE, 35.0)
+                .add(EntityAttributes.GENERIC_MAX_HEALTH, 20.0 + ModConfig.hordeMemberBonusHealth)
+                .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.23F)
+                .add(EntityAttributes.GENERIC_ATTACK_DAMAGE, 3.0)
+                .add(EntityAttributes.GENERIC_ARMOR, 2.0)
+                .add(EntityAttributes.ZOMBIE_SPAWN_REINFORCEMENTS);
     }
 }
