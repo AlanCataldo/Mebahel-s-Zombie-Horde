@@ -1,7 +1,5 @@
 package net.mebahel.zombiehorde.entity.custom;
 
-import net.mebahel.zombiehorde.entity.ai.ModHordeGoal;
-import net.mebahel.zombiehorde.entity.ai.ZombieHordeAttackGoal;
 import net.mebahel.zombiehorde.util.ModConfig;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ai.goal.*;
@@ -111,18 +109,6 @@ public class ZombieHordeEntity extends ZombieEntity {
         return Objects.equals(this.dataTracker.get(PATROL_UUID), other.getPatrolId());
     }
 
-    @Override
-    public void tick() {
-        super.tick();
-        double maxDistance = 300.0;
-
-        PlayerEntity nearestPlayer = this.getWorld().getClosestPlayer(this, maxDistance);
-
-        if (nearestPlayer == null || this.distanceTo(nearestPlayer) > maxDistance) {
-            this.discard();
-        }
-    }
-
     protected void initDataTracker() {
         super.initDataTracker();
         this.dataTracker.startTracking(PATROL_UUID, "");
@@ -140,17 +126,13 @@ public class ZombieHordeEntity extends ZombieEntity {
     protected void initGoals() {
         this.goalSelector.add(0, new SwimGoal(this));
         this.goalSelector.add(1, new BreakDoorGoal(this, zombie -> true));
-        this.goalSelector.add(3, new ModHordeGoal(this, 1f, 1f));
         this.goalSelector.add(8, new LookAtEntityGoal(this, PlayerEntity.class, 8.0F));
         this.goalSelector.add(8, new LookAroundGoal(this));
         this.initCustomGoals();
     }
-
-
-
     @Override
     protected void initCustomGoals() {
-        this.goalSelector.add(2, new ZombieHordeAttackGoal(this, 1.0, false));
+
         this.goalSelector.add(6, new MoveThroughVillageGoal(this, 1.0, true, 4, this::canBreakDoors));
         this.goalSelector.add(7, new WanderAroundFarGoal(this, 1.0));
 
@@ -193,7 +175,7 @@ public class ZombieHordeEntity extends ZombieEntity {
     public static DefaultAttributeContainer.Builder createZombieAttributes() {
         return HostileEntity.createHostileAttributes()
                 .add(EntityAttributes.GENERIC_FOLLOW_RANGE, 35.0)
-                .add(EntityAttributes.GENERIC_MAX_HEALTH, 20.0 + ModConfig.hordeMemberBonusHealth)
+                .add(EntityAttributes.GENERIC_MAX_HEALTH, 20.0)
                 .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.23F)
                 .add(EntityAttributes.GENERIC_ATTACK_DAMAGE, 3.0)
                 .add(EntityAttributes.GENERIC_ARMOR, 2.0)

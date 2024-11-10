@@ -16,7 +16,7 @@ public class ModDifficultyState extends PersistentState {
 
     public void setDifficultyLevel(int difficultyLevel) {
         this.difficultyLevel = difficultyLevel;
-        this.markDirty(); // Indique que les données ont changé et doivent être sauvegardées
+        this.markDirty();
     }
 
     @Override
