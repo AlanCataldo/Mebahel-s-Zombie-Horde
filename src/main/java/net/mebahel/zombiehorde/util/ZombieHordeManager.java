@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.mebahel.zombiehorde.MebahelZombieHorde;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -161,7 +162,7 @@ public class ZombieHordeManager {
             randomValue -= mobType.weight;
             if (randomValue < 0) {
                 Identifier entityId = Identifier.of(mobType.id);
-                return Registries.ENTITY_TYPE.getOrEmpty(entityId).orElse(null);
+                return Registries.ENTITY_TYPE.get(entityId);
             }
         }
 
@@ -198,7 +199,7 @@ public class ZombieHordeManager {
             return; // Return early to prevent the crash
         }
 
-        var leader = randomEntityType.create(world);
+        var leader = randomEntityType.create(world, SpawnReason.EVENT);
         if (leader == null) {
             System.err.println("[Mebahel's Zombie Horde] Error: Failed to create entity of type " + randomEntityType);
             return; // Return early if the entity could not be created
@@ -212,7 +213,7 @@ public class ZombieHordeManager {
 
             // Additional configuration, such as health bonuses
             if (ModConfig.hordeMemberBonusHealth > 0) {
-                livingMember.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH)
+                livingMember.getAttributeInstance(EntityAttributes.MAX_HEALTH)
                         .setBaseValue(livingMember.getMaxHealth() + ModConfig.hordeMemberBonusHealth);
                 livingMember.setHealth(livingMember.getMaxHealth());
             }
@@ -241,7 +242,7 @@ public class ZombieHordeManager {
                 continue; // Skip this iteration if the entity type is invalid
             }
 
-            var member = randomEntityType.create(world);
+            var member = randomEntityType.create(world, SpawnReason.EVENT);
             if (member == null) {
                 System.err.println("[Mebahel's Zombie Horde] Error: Failed to create entity of type " + randomEntityType);
                 continue; // Skip this iteration if the entity could not be created
@@ -255,7 +256,7 @@ public class ZombieHordeManager {
 
                 // Additional configuration, such as health bonuses
                 if (ModConfig.hordeMemberBonusHealth > 0) {
-                    livingMember.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH)
+                    livingMember.getAttributeInstance(EntityAttributes.MAX_HEALTH)
                             .setBaseValue(livingMember.getMaxHealth() + ModConfig.hordeMemberBonusHealth);
                     livingMember.setHealth(livingMember.getMaxHealth());
                 }

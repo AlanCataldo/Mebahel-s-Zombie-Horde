@@ -28,7 +28,7 @@ public class ModHordeGoal extends Goal {
             throw new IllegalArgumentException("Entity must implement IPatrolData");
         }
         this.entity = entity;
-        this.baseSpeed = Objects.requireNonNull(this.entity.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)).getBaseValue();
+        this.baseSpeed = Objects.requireNonNull(this.entity.getAttributeInstance(EntityAttributes.MOVEMENT_SPEED)).getBaseValue();
         this.leaderSpeed = leaderSpeed;
         this.followSpeed = followSpeed;
         this.setControls(EnumSet.of(Control.MOVE));
@@ -38,13 +38,13 @@ public class ModHordeGoal extends Goal {
     @Override
     public void start() {
         super.start();
-        Objects.requireNonNull(this.entity.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)).setBaseValue(0.27D);
+        Objects.requireNonNull(this.entity.getAttributeInstance(EntityAttributes.MOVEMENT_SPEED)).setBaseValue(0.27D);
     }
 
     @Override
     public void stop() {
         super.stop();
-        Objects.requireNonNull(this.entity.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)).setBaseValue(this.baseSpeed);
+        Objects.requireNonNull(this.entity.getAttributeInstance(EntityAttributes.MOVEMENT_SPEED)).setBaseValue(this.baseSpeed);
     }
 
     @Override
@@ -57,28 +57,26 @@ public class ModHordeGoal extends Goal {
         }
 
         // If this entity or any horde member has a target, we want to start
-        if (entity.getTarget() != null) {
+        if (entity.getTarget() != null && entity.getTarget().isAlive()) {
             shareTargetWithHorde(entity.getTarget());
             return false; // No need to start this goal if we already have a target
         }
-
         // If the assigned leader is invalid, try to find a new one
         if (this.assignedLeader == null || !this.assignedLeader.isAlive()) {
             this.assignedLeader = findNewLeader();
         }
-
         return this.assignedLeader != null && this.assignedLeader.isAlive();
     }
 
     @Override
     public boolean shouldContinue() {
-        // Continue patrolling if we don't have a target
-        if (this.entity.getTarget() != null) {
-            shareTargetWithHorde(this.entity.getTarget());
+        LivingEntity target = this.entity.getTarget();
+        if (target != null && target.isAlive()) {
+            shareTargetWithHorde(target);
             this.stop();
             return false; // No need to start this goal if we already have a target
         }
-        return this.entity.getTarget() == null;
+        return true;
     }
 
     @Override
@@ -174,6 +172,8 @@ public class ModHordeGoal extends Goal {
         for (MobEntity member : patrolMembers) {
             if (member.getTarget() == null) {
                 member.setTarget(target); // Share the target
+            } else if (!member.getTarget().isAlive()) {
+                member.setTarget(target);
             }
         }
     }
