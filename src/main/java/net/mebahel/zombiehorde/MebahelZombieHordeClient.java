@@ -9,7 +9,6 @@ import net.minecraft.client.render.entity.ZombieEntityRenderer;
 public class MebahelZombieHordeClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
-        EntityRendererRegistry.register(ModEntities.ZOMBIE_HORDE, ZombieEntityRenderer::new);
-        EntityRendererRegistry.register(ModEntities.HUSK_HORDE, HuskEntityRenderer::new);
+
     }
 }
