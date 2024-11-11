@@ -57,28 +57,26 @@ public class ModHordeGoal extends Goal {
         }
 
         // If this entity or any horde member has a target, we want to start
-        if (entity.getTarget() != null) {
+        if (entity.getTarget() != null && entity.getTarget().isAlive()) {
             shareTargetWithHorde(entity.getTarget());
             return false; // No need to start this goal if we already have a target
         }
-
         // If the assigned leader is invalid, try to find a new one
         if (this.assignedLeader == null || !this.assignedLeader.isAlive()) {
             this.assignedLeader = findNewLeader();
         }
-
         return this.assignedLeader != null && this.assignedLeader.isAlive();
     }
 
     @Override
     public boolean shouldContinue() {
-        // Continue patrolling if we don't have a target
-        if (this.entity.getTarget() != null) {
-            shareTargetWithHorde(this.entity.getTarget());
+        LivingEntity target = this.entity.getTarget();
+        if (target != null && target.isAlive()) {
+            shareTargetWithHorde(target);
             this.stop();
             return false; // No need to start this goal if we already have a target
         }
-        return this.entity.getTarget() == null;
+        return true;
     }
 
     @Override
@@ -102,7 +100,7 @@ public class ModHordeGoal extends Goal {
 
             // If a target is acquired, share it with the horde
             LivingEntity currentTarget = this.assignedLeader != null ? this.assignedLeader.getTarget() : null;
-            if (currentTarget != null) {
+            if (currentTarget != null && currentTarget.isAlive()) {
                 shareTargetWithHorde(currentTarget);
                 return; // No need to continue patrolling if we have a target
             }
@@ -174,6 +172,8 @@ public class ModHordeGoal extends Goal {
         for (MobEntity member : patrolMembers) {
             if (member.getTarget() == null) {
                 member.setTarget(target); // Share the target
+            } else if (!member.getTarget().isAlive()) {
+                member.setTarget(target);
             }
         }
     }
