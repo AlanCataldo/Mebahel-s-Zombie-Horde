@@ -22,6 +22,7 @@ public class ModConfig {
     public static int hordeMemberBonusHealth = 0;
     public static boolean hordeMemberBreakGlass = true;
     public static boolean hordeMemberBreakFence = true;
+    public static boolean showHordeSpawningMessage = true;
 
 
     public static void loadConfig(File configDir) {
@@ -85,6 +86,11 @@ public class ModConfig {
                     updated = true;
                 }
 
+                if (data.showHordeSpawningMessage == null) {
+                    data.showHordeSpawningMessage = true;
+                    updated = true;
+                }
+
                 spawnInDaylight = data.spawnInDayLight;
                 enableDifficultySystem = data.enableDifficultySystem;
                 patrolSpawning = data.hordeSpawning;
@@ -95,6 +101,7 @@ public class ModConfig {
                 hordeMemberBonusHealth = data.hordeMemberBonusHealth;
                 hordeMemberBreakGlass = data.hordeMemberBreakGlass;
                 hordeMemberBreakFence = data.hordeMemberBreakFence;
+                showHordeSpawningMessage = data.showHordeSpawningMessage;
 
                 if (updated) {
                     saveConfig(configDir);
@@ -110,7 +117,8 @@ public class ModConfig {
     public static void saveConfig(File configDir) {
         File configFile = new File(configDir, CONFIG_FILE_NAME);
         ConfigData data = new ConfigData(spawnInDaylight ,enableDifficultySystem, patrolSpawning, patrolSpawnDelay, hordeSpawnChance,
-                randomNumberHordeReinforcements, hordeNumber, hordeMemberBonusHealth, hordeMemberBreakGlass, hordeMemberBreakFence);
+                randomNumberHordeReinforcements, hordeNumber, hordeMemberBonusHealth, hordeMemberBreakGlass, hordeMemberBreakFence,
+                showHordeSpawningMessage);
         try (FileWriter writer = new FileWriter(configFile)) {
             GSON.toJson(data, writer);
         } catch (IOException e) {
@@ -129,10 +137,11 @@ public class ModConfig {
         Integer hordeMemberBonusHealth;
         Boolean hordeMemberBreakGlass;
         Boolean hordeMemberBreakFence;
+        Boolean showHordeSpawningMessage;
 
         ConfigData(boolean spawnInDayLight, boolean enableDifficultySystem, boolean hordeSpawning, int hordeSpawnDelay,
         float hordeSpawnChance, int randomNumberHordeReinforcements, int hordeNumber, int hordeMemberBonusHealth, boolean hordeMemberBreakGlass,
-                   boolean hordeMemberBreakFence) {
+                   boolean hordeMemberBreakFence, boolean showHordeSpawningMessage) {
             this.spawnInDayLight = spawnInDayLight;
             this.enableDifficultySystem = enableDifficultySystem;
             this.hordeSpawning = hordeSpawning;
@@ -143,6 +152,7 @@ public class ModConfig {
             this.hordeMemberBonusHealth = hordeMemberBonusHealth;
             this.hordeMemberBreakGlass = hordeMemberBreakGlass;
             this.hordeMemberBreakFence = hordeMemberBreakFence;
+            this.showHordeSpawningMessage = showHordeSpawningMessage;
         }
     }
 }

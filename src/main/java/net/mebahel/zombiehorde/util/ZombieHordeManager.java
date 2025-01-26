@@ -13,6 +13,7 @@ import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
@@ -111,7 +112,6 @@ public class ZombieHordeManager {
                 if (spawnPos != null) {
                     UUID patrolId = UUID.randomUUID();
                     spawnPatrol(world, spawnPos, patrolId);
-                    System.out.println("[Mebahel's Zombie Horde] Zombie horde spawning for at : " + spawnPos);
                 }
             }
         }
@@ -188,6 +188,11 @@ public class ZombieHordeManager {
         }
         spawnPatrolLeader(composition, world, leaderPos, distantTarget, random, patrolId, difficultyLevel);
         spawnPatrolMember(composition, world, numFollowers, groundPos, distantTarget, random, patrolId, difficultyLevel);
+        System.out.println("[Mebahel's Zombie Horde]" + leaderPos.getX() + ", " + leaderPos.getY() + ", " + leaderPos.getZ() + ".");
+        String message = "A horde has spawned near " + leaderPos.getX() + ", " + leaderPos.getY() + ", " + leaderPos.getZ() + ".";
+        world.getServer().getPlayerManager().getPlayerList().forEach(player ->
+                player.sendMessage(Text.literal(message), false)
+        );
     }
 
     private static void spawnPatrolLeader(HordeMemberModConfig.HordeComposition composition, ServerWorld world, BlockPos groundPos, BlockPos distantTarget, Random random,
@@ -310,7 +315,7 @@ public class ZombieHordeManager {
 
     private static void equipWithGear(Entity zombie, Random random, int difficultyLevel) {
         float armorChance = 0.06f * difficultyLevel;
-        float weaponChance = 0.1f * difficultyLevel;
+        float weaponChance = 0.13f * difficultyLevel;
 
         if (random.nextFloat() < armorChance) {
             zombie.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
@@ -324,7 +329,12 @@ public class ZombieHordeManager {
         if (random.nextFloat() < armorChance) {
             zombie.equipStack(EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
         }
-        if (random.nextFloat() < weaponChance) {
+        if (zombie.getType() == EntityType.PILLAGER) {
+            zombie.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.CROSSBOW));
+        } else if (random.nextFloat() < weaponChance) {
+            if (zombie.getType() == EntityType.SKELETON) {
+                zombie.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+            }
             zombie.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
         }
     }
