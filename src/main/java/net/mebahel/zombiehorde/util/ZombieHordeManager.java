@@ -190,9 +190,11 @@ public class ZombieHordeManager {
         spawnPatrolMember(composition, world, numFollowers, groundPos, distantTarget, random, patrolId, difficultyLevel);
         System.out.println("[Mebahel's Zombie Horde]" + leaderPos.getX() + ", " + leaderPos.getY() + ", " + leaderPos.getZ() + ".");
         String message = "A horde has spawned near " + leaderPos.getX() + ", " + leaderPos.getY() + ", " + leaderPos.getZ() + ".";
-        world.getServer().getPlayerManager().getPlayerList().forEach(player ->
-                player.sendMessage(Text.literal(message), false)
-        );
+        if (ModConfig.showHordeSpawningMessage) {
+            world.getServer().getPlayerManager().getPlayerList().forEach(player ->
+                    player.sendMessage(Text.literal(message), false)
+            );
+        }
     }
 
     private static void spawnPatrolLeader(HordeMemberModConfig.HordeComposition composition, ServerWorld world, BlockPos groundPos, BlockPos distantTarget, Random random,
@@ -229,7 +231,7 @@ public class ZombieHordeManager {
         patrolData.setHordeEntityPatrolling(true);
         patrolData.setHordeEntityPatrolId(patrolId.toString());
 
-        equipWithGear(leader, random, difficultyLevel);
+        equipWithGear(leader, random, composition, difficultyLevel);
         world.spawnEntity(leader);
     }
 
@@ -270,7 +272,7 @@ public class ZombieHordeManager {
             patrolData.setHordeEntityPatrolling(true);
             patrolData.setHordeEntityPatrolId(patrolId.toString());
 
-            equipWithGear(member, random, difficultyLevel);
+            equipWithGear(member, random, composition, difficultyLevel);
             world.spawnEntity(member);
             currentSpawnPos = getOffsetPosition(currentSpawnPos, random);
         }
@@ -312,30 +314,80 @@ public class ZombieHordeManager {
     private static BlockPos findTopSolidBlock(ServerWorld world, BlockPos pos) {
         return world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos);
     }
+    private static HordeMemberModConfig.HordeMobType getMobTypeFromComposition(Entity entity, HordeMemberModConfig.HordeComposition composition) {
+        String mobId = Registries.ENTITY_TYPE.getId(entity.getType()).toString();
 
-    private static void equipWithGear(Entity zombie, Random random, int difficultyLevel) {
+        for (HordeMemberModConfig.HordeMobType mobType : composition.mobTypes) {
+            if (mobType.id.equals(mobId)) {
+                return mobType;
+            }
+        }
+
+        return null; // Aucune configuration spécifique trouvée pour ce type de mob
+    }
+
+    private static void equipWithGear(Entity entity, Random random, HordeMemberModConfig.HordeComposition composition, int difficultyLevel) {
         float armorChance = 0.06f * difficultyLevel;
         float weaponChance = 0.13f * difficultyLevel;
 
+        // Équipement d'armure basé sur les probabilités
         if (random.nextFloat() < armorChance) {
-            zombie.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
+            entity.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
         }
         if (random.nextFloat() < armorChance) {
-            zombie.equipStack(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+            entity.equipStack(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
         }
         if (random.nextFloat() < armorChance) {
-            zombie.equipStack(EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
+            entity.equipStack(EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
         }
         if (random.nextFloat() < armorChance) {
-            zombie.equipStack(EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
+            entity.equipStack(EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
         }
-        if (zombie.getType() == EntityType.PILLAGER) {
-            zombie.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.CROSSBOW));
-        } else if (random.nextFloat() < weaponChance) {
-            if (zombie.getType() == EntityType.SKELETON) {
-                zombie.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
+
+        // Vérification pour les PILLAGER et VINDICATOR (skip weaponChance)
+        if (entity.getType() == EntityType.PILLAGER || entity.getType() == EntityType.VINDICATOR) {
+            // Sélection d'une arme depuis la configuration
+            HordeMemberModConfig.HordeMobType mobType = getMobTypeFromComposition(entity, composition);
+            if (mobType != null && mobType.weapons != null && !mobType.weapons.isEmpty()) {
+                double totalChance = mobType.weapons.stream().mapToDouble(w -> w.chance).sum();
+                double randomChance = random.nextFloat() * totalChance;
+
+                for (HordeMemberModConfig.WeaponConfig weapon : mobType.weapons) {
+                    randomChance -= weapon.chance;
+                    if (randomChance <= 0) {
+                        ItemStack weaponStack = new ItemStack(Registries.ITEM.get(new Identifier(weapon.itemId)));
+                        entity.equipStack(EquipmentSlot.MAINHAND, weaponStack);
+                        return; // Arme trouvée et équipée
+                    }
+                }
             }
-            zombie.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+
+            // Arme par défaut si aucune arme configurée pour ce mob
+            if (entity.getType() == EntityType.PILLAGER) {
+                entity.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.CROSSBOW));
+            } else if (entity.getType() == EntityType.VINDICATOR) {
+                entity.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_AXE));
+            }
+            return; // Skip la logique suivante
+        }
+
+        // Vérification générale avec weaponChance pour les autres types d'entités
+        if (random.nextFloat() < weaponChance) {
+            // Sélection de l'arme pour les autres types de mobs
+            HordeMemberModConfig.HordeMobType mobType = getMobTypeFromComposition(entity, composition);
+            if (mobType != null && mobType.weapons != null && !mobType.weapons.isEmpty()) {
+                double totalChance = mobType.weapons.stream().mapToDouble(w -> w.chance).sum();
+                double randomChance = random.nextFloat() * totalChance;
+
+                for (HordeMemberModConfig.WeaponConfig weapon : mobType.weapons) {
+                    randomChance -= weapon.chance;
+                    if (randomChance <= 0) {
+                        ItemStack weaponStack = new ItemStack(Registries.ITEM.get(new Identifier(weapon.itemId)));
+                        entity.equipStack(EquipmentSlot.MAINHAND, weaponStack);
+                        return; // Arme trouvée et équipée
+                    }
+                }
+            }
         }
     }
 }
