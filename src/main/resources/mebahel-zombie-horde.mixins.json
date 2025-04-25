@@ -3,7 +3,11 @@
 	"package": "net.mebahel.zombiehorde.mixin",
 	"compatibilityLevel": "JAVA_17",
 	"mixins": [
-		"ExampleMixin"
+		"AddHordeGoalToEntityMixin",
+		"HordeEntityAffectedByDayLightMixin",
+		"MobEntityAccessor",
+		"PatrolDataMixin",
+		"PatrolDataMobEntityMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

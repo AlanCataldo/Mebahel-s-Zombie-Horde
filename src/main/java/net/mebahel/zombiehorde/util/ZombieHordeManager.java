@@ -2,20 +2,21 @@ package net.mebahel.zombiehorde.util;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
-import net.fabricmc.fabric.api.tag.convention.v1.ConventionalBiomeTags;
 import net.mebahel.zombiehorde.MebahelZombieHorde;
-import net.mebahel.zombiehorde.entity.ModEntities;
-import net.mebahel.zombiehorde.entity.custom.ZombieHordeEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.SpawnReason;
+import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.PersistentStateManager;
 import net.minecraft.world.World;
@@ -24,10 +25,9 @@ import java.util.*;
 
 public class ZombieHordeManager {
     private static final int CHECK_INTERVAL = 20 * 60 * ModConfig.patrolSpawnDelay;
-    private static final int NETHER_CHECK_INTERVAL = 300; // 1 minute
+    private static final int NETHER_CHECK_INTERVAL = 300;
     private static int patrolCheckCounter = 0;
     private static int netherCheckCounter = 0;
-
     private static final Map<ServerWorld, Integer> worldDifficultyLevels = new HashMap<>();
     private static final Map<ServerWorld, ServerTickEvents.EndTick> registeredListeners = new HashMap<>();
 
@@ -104,11 +104,6 @@ public class ZombieHordeManager {
     private static void checkAndSpawnPatrol(ServerWorld world) {
         List<ServerPlayerEntity> players = world.getPlayers();
 
-        if (players.isEmpty()) {
-            System.out.println("No players found in world: " + world.getRegistryKey().getValue());
-            return;
-        }
-
         if (!players.isEmpty()) {
             Random random = new Random();
             PlayerEntity randomPlayer = players.get(random.nextInt(players.size()));
@@ -117,8 +112,7 @@ public class ZombieHordeManager {
                 BlockPos spawnPos = findSpawnPosition(world, randomPlayer);
                 if (spawnPos != null) {
                     UUID patrolId = UUID.randomUUID();
-                    spawnPatrol(world, spawnPos, patrolId, randomPlayer);
-                    System.out.println("[Mebahel's Zombie Horde] Zombie horde spawning for at : " + spawnPos);
+                    spawnPatrol(world, spawnPos, patrolId);
                 }
             }
         }
@@ -143,7 +137,7 @@ public class ZombieHordeManager {
             if (player.getAdvancementTracker().getProgress(world.getServer().getAdvancementLoader().get(new Identifier("minecraft", "nether/root"))).isDone()) {
                 int difficultyLevel = 2;
                 worldDifficultyLevels.put(world, difficultyLevel);
-                difficultyState.setDifficultyLevel(difficultyLevel); // Sauvegarde la nouvelle difficulté pour ce monde
+                difficultyState.setDifficultyLevel(difficultyLevel);
                 System.out.println("[Mebahel's Zombie Horde] Difficulty increased to 2 due to Nether visit by " + player.getName().getString());
                 break;
             }
@@ -154,7 +148,38 @@ public class ZombieHordeManager {
         return !world.getDimension().hasFixedTime() && !world.isDay();
     }
 
-    private static void spawnPatrol(ServerWorld world, BlockPos pos, UUID patrolId, PlayerEntity player) {
+    private static HordeMemberModConfig.HordeComposition getRandomHordeComposition(Random random) {
+        List<HordeMemberModConfig.HordeComposition> compositions = HordeMemberModConfig.hordeCompositions;
+        int totalWeight = compositions.stream().mapToInt(c -> c.weight).sum();
+
+        int randomValue = random.nextInt(totalWeight);
+        for (HordeMemberModConfig.HordeComposition composition : compositions) {
+            randomValue -= composition.weight;
+            if (randomValue < 0) {
+                return composition;
+            }
+        }
+
+        return compositions.get(0);
+    }
+
+
+    private static EntityType<?> getRandomEntityTypeFromComposition(Random random, HordeMemberModConfig.HordeComposition composition) {
+        int totalWeight = composition.mobTypes.stream().mapToInt(mobType -> mobType.weight).sum();
+        int randomValue = random.nextInt(totalWeight);
+
+        for (HordeMemberModConfig.HordeMobType mobType : composition.mobTypes) {
+            randomValue -= mobType.weight;
+            if (randomValue < 0) {
+                Identifier entityId = new Identifier(mobType.id);
+                return Registry.ENTITY_TYPE.getOrEmpty(entityId).orElse(null);
+            }
+        }
+
+        return null;
+    }
+
+    private static void spawnPatrol(ServerWorld world, BlockPos pos, UUID patrolId) {
         Random random = new Random();
         BlockPos groundPos = world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos);
         BlockPos leaderPos = getOffsetPosition(groundPos, random);
@@ -165,52 +190,102 @@ public class ZombieHordeManager {
         if (ModConfig.randomNumberHordeReinforcements > 0) {
             int reinforcement = random.nextInt(ModConfig.randomNumberHordeReinforcements);
             numFollowers += reinforcement;
-            if (reinforcement == 1)
-                System.out.println("[Mebahel's Zombie Horde] The Horde has been reinforced by " + reinforcement + " Zombie.");
-            else
-                System.out.println("[Mebahel's Zombie Horde] The Horde has been reinforced by " + reinforcement + " Zombies.");
+            System.out.printf("[Mebahel's Zombie Horde] The Horde has been reinforced by %d Zombies.%n", reinforcement);
         }
-
-        EntityType<? extends ZombieHordeEntity> entityType = world.getBiome(player.getBlockPos()).isIn(ConventionalBiomeTags.DESERT)
-                ? ModEntities.HUSK_HORDE
-                : ModEntities.ZOMBIE_HORDE;
-
-        spawnPatrolLeader(world, entityType, leaderPos, distantTarget, random, patrolId, difficultyLevel);
-        spawnPatrolMember(world, entityType, numFollowers, groundPos, distantTarget, random, patrolId, difficultyLevel);
+        HordeMemberModConfig.HordeComposition composition = getRandomHordeComposition(random);
+        if (composition == null) {
+            System.err.println("No valid horde composition found.");
+            return;
+        }
+        spawnPatrolLeader(composition, world, leaderPos, distantTarget, random, patrolId, difficultyLevel);
+        spawnPatrolMember(composition, world, numFollowers, groundPos, distantTarget, random, patrolId, difficultyLevel);
+        System.out.println("[Mebahel's Zombie Horde]" + leaderPos.getX() + ", " + leaderPos.getY() + ", " + leaderPos.getZ() + ".");
+        String message = "A horde has spawned near " + leaderPos.getX() + ", " + leaderPos.getY() + ", " + leaderPos.getZ() + ".";
+        if (ModConfig.showHordeSpawningMessage) {
+            world.getServer().getPlayerManager().getPlayerList().forEach(player ->
+                    player.sendMessage(Text.literal(message), false)
+            );
+        }
     }
 
-    private static void spawnPatrolLeader(ServerWorld world, EntityType<? extends ZombieHordeEntity> entityType,
-                                          BlockPos groundPos, BlockPos distantTarget, Random random, UUID patrolId, int difficultyLevel) {
-        ZombieHordeEntity leader = new ZombieHordeEntity(entityType, world);
-        leader.setPatrolId(patrolId.toString());
-        BlockPos leaderPos = getOffsetPosition(groundPos, random);
-        leaderPos = findSafeSpawnPosition(world, leaderPos);  // Rechercher une position de spawn sûre
+    private static void spawnPatrolLeader(HordeMemberModConfig.HordeComposition composition, ServerWorld world, BlockPos groundPos, BlockPos distantTarget, Random random,
+                                          UUID patrolId, int difficultyLevel) {
+        EntityType<?> randomEntityType = getRandomEntityTypeFromComposition(random, composition);
+        if (randomEntityType == null) {
+            System.err.println("[Mebahel's Zombie Horde] Error: Invalid or unregistered entity type in horde composition.");
+            return; // Return early to prevent the crash
+        }
+
+        var leader = randomEntityType.create(world);
+        if (leader == null) {
+            System.err.println("[Mebahel's Zombie Horde] Error: Failed to create entity of type " + randomEntityType);
+            return; // Return early if the entity could not be created
+        }
+
+        BlockPos leaderPos = findSafeSpawnPosition(world, groundPos);
         leader.setPosition(leaderPos.getX() + 0.5, leaderPos.getY(), leaderPos.getZ() + 0.5);
-        leader.setPatrolLeader(true);
-        leader.setPatrolTarget(distantTarget);
-        leader.setWasInitiallyInPatrol(true);
-        leader.initialize(world, world.getLocalDifficulty(groundPos), SpawnReason.EVENT, null, null);
-        equipWithGear(leader, random, difficultyLevel);
+
+        if (leader instanceof MobEntity livingMember) {
+            livingMember.setPersistent();
+
+            // Additional configuration, such as health bonuses
+            if (ModConfig.hordeMemberBonusHealth > 0) {
+                livingMember.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH)
+                        .setBaseValue(livingMember.getMaxHealth() + ModConfig.hordeMemberBonusHealth);
+                livingMember.setHealth(livingMember.getMaxHealth());
+            }
+        }
+
+        IPatrolData patrolData = (IPatrolData) leader;
+        patrolData.setHordeEntityPatrolLeader(true);
+        patrolData.setHordeEntityPatrolTarget(distantTarget);
+        patrolData.setHordeEntityPatrolling(true);
+        patrolData.setHordeEntityPatrolId(patrolId.toString());
+
+        equipWithGear(leader, random, composition, difficultyLevel);
         world.spawnEntity(leader);
     }
 
-    private static void spawnPatrolMember(ServerWorld world, EntityType<? extends ZombieHordeEntity> entityType, int entityNumber,
+    private static void spawnPatrolMember(HordeMemberModConfig.HordeComposition composition, ServerWorld world, int entityNumber,
                                           BlockPos initialPos, BlockPos distantTarget, Random random, UUID patrolId, int difficultyLevel) {
         BlockPos currentSpawnPos = initialPos;
 
         for (int i = 0; i < entityNumber; i++) {
-            ZombieHordeEntity member = new ZombieHordeEntity(entityType, world);
-            member.setPatrolId(patrolId.toString());
-            BlockPos memberSpawnPos = getOffsetPosition(currentSpawnPos, random);
-            memberSpawnPos = findSafeSpawnPosition(world, memberSpawnPos);  // Rechercher une position de spawn sûre
-            member.setPosition(memberSpawnPos.getX() + 0.5, memberSpawnPos.getY(), memberSpawnPos.getZ() + 0.5);
-            member.setPatrolTarget(distantTarget);
-            member.setWasInitiallyInPatrol(true);
-            member.initialize(world, world.getLocalDifficulty(memberSpawnPos), SpawnReason.EVENT, null, null);
-            equipWithGear(member, random, difficultyLevel);
-            world.spawnEntity(member);
+            EntityType<?> randomEntityType = getRandomEntityTypeFromComposition(random, composition);
+            if (randomEntityType == null) {
+                randomEntityType = EntityType.ZOMBIE;
+                System.err.println("[Mebahel's Zombie Horde] Error: Invalid or unregistered entity type in horde composition.");
+                continue; // Skip this iteration if the entity type is invalid
+            }
 
-            currentSpawnPos = memberSpawnPos;
+            var member = randomEntityType.create(world);
+            if (member == null) {
+                System.err.println("[Mebahel's Zombie Horde] Error: Failed to create entity of type " + randomEntityType);
+                continue; // Skip this iteration if the entity could not be created
+            }
+
+            BlockPos memberSpawnPos = findSafeSpawnPosition(world, currentSpawnPos);
+            member.setPosition(memberSpawnPos.getX() + 0.5, memberSpawnPos.getY(), memberSpawnPos.getZ() + 0.5);
+
+            if (member instanceof MobEntity livingMember) {
+                livingMember.setPersistent();
+
+                // Additional configuration, such as health bonuses
+                if (ModConfig.hordeMemberBonusHealth > 0) {
+                    livingMember.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH)
+                            .setBaseValue(livingMember.getMaxHealth() + ModConfig.hordeMemberBonusHealth);
+                    livingMember.setHealth(livingMember.getMaxHealth());
+                }
+            }
+
+            IPatrolData patrolData = (IPatrolData) member;
+            patrolData.setHordeEntityPatrolTarget(distantTarget);
+            patrolData.setHordeEntityPatrolling(true);
+            patrolData.setHordeEntityPatrolId(patrolId.toString());
+
+            equipWithGear(member, random, composition, difficultyLevel);
+            world.spawnEntity(member);
+            currentSpawnPos = getOffsetPosition(currentSpawnPos, random);
         }
     }
 
@@ -218,6 +293,7 @@ public class ZombieHordeManager {
         BlockPos safePos = world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos);
         return safePos;
     }
+
     private static BlockPos getOffsetPosition(BlockPos basePos, Random random) {
         int offsetX = 5 + random.nextInt(5);
         int offsetZ = 5 + random.nextInt(5);
@@ -249,25 +325,80 @@ public class ZombieHordeManager {
     private static BlockPos findTopSolidBlock(ServerWorld world, BlockPos pos) {
         return world.getTopPosition(Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, pos);
     }
+    private static HordeMemberModConfig.HordeMobType getMobTypeFromComposition(Entity entity, HordeMemberModConfig.HordeComposition composition) {
+        String mobId = Registry.ENTITY_TYPE.getId(entity.getType()).toString();
 
-    private static void equipWithGear(ZombieHordeEntity zombie, Random random, int difficultyLevel) {
+        for (HordeMemberModConfig.HordeMobType mobType : composition.mobTypes) {
+            if (mobType.id.equals(mobId)) {
+                return mobType;
+            }
+        }
+
+        return null; // Aucune configuration spécifique trouvée pour ce type de mob
+    }
+
+    private static void equipWithGear(Entity entity, Random random, HordeMemberModConfig.HordeComposition composition, int difficultyLevel) {
         float armorChance = 0.06f * difficultyLevel;
-        float weaponChance = 0.1f * difficultyLevel;
+        float weaponChance = 0.13f * difficultyLevel;
 
+        // Équipement d'armure basé sur les probabilités
         if (random.nextFloat() < armorChance) {
-            zombie.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
+            entity.equipStack(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
         }
         if (random.nextFloat() < armorChance) {
-            zombie.equipStack(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+            entity.equipStack(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
         }
         if (random.nextFloat() < armorChance) {
-            zombie.equipStack(EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
+            entity.equipStack(EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
         }
         if (random.nextFloat() < armorChance) {
-            zombie.equipStack(EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
+            entity.equipStack(EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
         }
+
+        // Vérification pour les PILLAGER et VINDICATOR (skip weaponChance)
+        if (entity.getType() == EntityType.PILLAGER || entity.getType() == EntityType.VINDICATOR) {
+            // Sélection d'une arme depuis la configuration
+            HordeMemberModConfig.HordeMobType mobType = getMobTypeFromComposition(entity, composition);
+            if (mobType != null && mobType.weapons != null && !mobType.weapons.isEmpty()) {
+                double totalChance = mobType.weapons.stream().mapToDouble(w -> w.chance).sum();
+                double randomChance = random.nextFloat() * totalChance;
+
+                for (HordeMemberModConfig.WeaponConfig weapon : mobType.weapons) {
+                    randomChance -= weapon.chance;
+                    if (randomChance <= 0) {
+                        ItemStack weaponStack = new ItemStack(Registry.ITEM.get(new Identifier(weapon.itemId)));
+                        entity.equipStack(EquipmentSlot.MAINHAND, weaponStack);
+                        return; // Arme trouvée et équipée
+                    }
+                }
+            }
+
+            // Arme par défaut si aucune arme configurée pour ce mob
+            if (entity.getType() == EntityType.PILLAGER) {
+                entity.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.CROSSBOW));
+            } else if (entity.getType() == EntityType.VINDICATOR) {
+                entity.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_AXE));
+            }
+            return; // Skip la logique suivante
+        }
+
+        // Vérification générale avec weaponChance pour les autres types d'entités
         if (random.nextFloat() < weaponChance) {
-            zombie.equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+            // Sélection de l'arme pour les autres types de mobs
+            HordeMemberModConfig.HordeMobType mobType = getMobTypeFromComposition(entity, composition);
+            if (mobType != null && mobType.weapons != null && !mobType.weapons.isEmpty()) {
+                double totalChance = mobType.weapons.stream().mapToDouble(w -> w.chance).sum();
+                double randomChance = random.nextFloat() * totalChance;
+
+                for (HordeMemberModConfig.WeaponConfig weapon : mobType.weapons) {
+                    randomChance -= weapon.chance;
+                    if (randomChance <= 0) {
+                        ItemStack weaponStack = new ItemStack(Registry.ITEM.get(new Identifier(weapon.itemId)));
+                        entity.equipStack(EquipmentSlot.MAINHAND, weaponStack);
+                        return; // Arme trouvée et équipée
+                    }
+                }
+            }
         }
     }
 }
