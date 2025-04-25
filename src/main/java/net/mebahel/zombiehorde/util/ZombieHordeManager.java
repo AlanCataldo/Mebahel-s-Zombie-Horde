@@ -148,10 +148,20 @@ public class ZombieHordeManager {
     }
 
     private static HordeMemberModConfig.HordeComposition getRandomHordeComposition(Random random) {
-        int totalCompositions = HordeMemberModConfig.hordeCompositions.size();
-        int index = random.nextInt(totalCompositions);
-        return HordeMemberModConfig.hordeCompositions.get(index);
+        List<HordeMemberModConfig.HordeComposition> compositions = HordeMemberModConfig.hordeCompositions;
+        int totalWeight = compositions.stream().mapToInt(c -> c.weight).sum();
+
+        int randomValue = random.nextInt(totalWeight);
+        for (HordeMemberModConfig.HordeComposition composition : compositions) {
+            randomValue -= composition.weight;
+            if (randomValue < 0) {
+                return composition;
+            }
+        }
+
+        return compositions.get(0);
     }
+
 
     private static EntityType<?> getRandomEntityTypeFromComposition(Random random, HordeMemberModConfig.HordeComposition composition) {
         int totalWeight = composition.mobTypes.stream().mapToInt(mobType -> mobType.weight).sum();

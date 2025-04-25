@@ -14,7 +14,7 @@ public class HordeMemberModConfig {
     private static final String CONFIG_FILE_NAME = MebahelZombieHorde.MOD_ID + "mob_type_config.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static List<HordeComposition> hordeCompositions = List.of(
-            new HordeComposition(List.of(
+            new HordeComposition(1, List.of(
                     new HordeMobType("minecraft:zombie", 30, List.of(
                             new WeaponConfig("minecraft:iron_sword", 0.5f),
                             new WeaponConfig("minecraft:stone_sword", 0.3f),
@@ -42,6 +42,14 @@ public class HordeMemberModConfig {
                     updated = true;
                 }
 
+                // Ajoute un poids de 1 si manquant
+                for (HordeComposition composition : data.hordeCompositions) {
+                    if (composition.weight <= 0) {
+                        composition.weight = 1;
+                        updated = true;
+                    }
+                }
+
                 hordeCompositions = data.hordeCompositions;
 
             } catch (Exception e) {
@@ -60,9 +68,10 @@ public class HordeMemberModConfig {
         }
     }
 
+
     private static ConfigData createDefaultConfig() {
         return new ConfigData(List.of(
-                new HordeComposition(List.of(
+                new HordeComposition(1, List.of(
                         new HordeMobType("minecraft:zombie", 30, List.of(
                                 new WeaponConfig("minecraft:iron_sword", 0.65f),
                                 new WeaponConfig("minecraft:stone_sword", 0.35f)
@@ -92,9 +101,11 @@ public class HordeMemberModConfig {
 
     // Classe représentant une composition de horde
     public static class HordeComposition {
+        public int weight;
         public List<HordeMobType> mobTypes;
 
-        HordeComposition(List<HordeMobType> mobTypes) {
+        HordeComposition(int weight, List<HordeMobType> mobTypes) {
+            this.weight = weight;
             this.mobTypes = mobTypes;
         }
     }
