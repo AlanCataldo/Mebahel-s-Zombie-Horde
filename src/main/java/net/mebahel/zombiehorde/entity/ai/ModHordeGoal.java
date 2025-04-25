@@ -100,7 +100,7 @@ public class ModHordeGoal extends Goal {
 
             // If a target is acquired, share it with the horde
             LivingEntity currentTarget = this.assignedLeader != null ? this.assignedLeader.getTarget() : null;
-            if (currentTarget != null) {
+            if (currentTarget != null && currentTarget.isAlive()) {
                 shareTargetWithHorde(currentTarget);
                 return; // No need to continue patrolling if we have a target
             }
