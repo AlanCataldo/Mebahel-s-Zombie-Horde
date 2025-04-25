@@ -14,8 +14,12 @@ public class HordeMemberModConfig {
     private static final String CONFIG_FILE_NAME = MebahelZombieHorde.MOD_ID + "mob_type_config.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     public static List<HordeComposition> hordeCompositions = List.of(
-            new HordeComposition(List.of(
-                    new HordeMobType("minecraft:zombie", 30)
+            new HordeComposition(1, List.of(
+                    new HordeMobType("minecraft:zombie", 30, List.of(
+                            new WeaponConfig("minecraft:iron_sword", 0.5f),
+                            new WeaponConfig("minecraft:stone_sword", 0.3f),
+                            new WeaponConfig("minecraft:wooden_sword", 0.2f)
+                    ))
             ))
     );
 
@@ -25,32 +29,55 @@ public class HordeMemberModConfig {
         }
 
         File configFile = new File(configDir, CONFIG_FILE_NAME);
+        boolean updated = false;
+
         if (configFile.exists()) {
             try (FileReader reader = new FileReader(configFile)) {
                 ConfigData data = GSON.fromJson(reader, ConfigData.class);
 
-                boolean updated = false;
-
-                if (data.hordeCompositions == null || data.hordeCompositions.isEmpty()) {
-                    data.hordeCompositions = List.of(
-                            new HordeComposition(List.of(
-                                    new HordeMobType("minecraft:zombie", 30)
-                            ))
-                    );
+                // Vérifie si la configuration est vide ou incorrecte
+                if (data == null || data.hordeCompositions == null || data.hordeCompositions.isEmpty()) {
+                    System.err.println("[Mebahel's Zombie Horde] Config file is empty or invalid. Using default configuration.");
+                    data = createDefaultConfig();
                     updated = true;
+                }
+
+                // Ajoute un poids de 1 si manquant
+                for (HordeComposition composition : data.hordeCompositions) {
+                    if (composition.weight <= 0) {
+                        composition.weight = 1;
+                        updated = true;
+                    }
                 }
 
                 hordeCompositions = data.hordeCompositions;
 
-                if (updated) {
-                    saveConfig(configDir);
-                }
-            } catch (IOException e) {
-                System.err.println("Failed to load config file: " + e.getMessage());
+            } catch (Exception e) {
+                System.err.println("[Mebahel's Zombie Horde] Failed to load config file or file is invalid. Using default configuration: " + e.getMessage());
+                hordeCompositions = createDefaultConfig().hordeCompositions;
+                updated = true;
             }
         } else {
+            System.out.println("[Mebahel's Zombie Horde] Config file not found. Creating a new one with default configuration.");
+            hordeCompositions = createDefaultConfig().hordeCompositions;
+            updated = true;
+        }
+
+        if (updated) {
             saveConfig(configDir);
         }
+    }
+
+
+    private static ConfigData createDefaultConfig() {
+        return new ConfigData(List.of(
+                new HordeComposition(1, List.of(
+                        new HordeMobType("minecraft:zombie", 30, List.of(
+                                new WeaponConfig("minecraft:iron_sword", 0.65f),
+                                new WeaponConfig("minecraft:stone_sword", 0.35f)
+                        ))
+                ))
+        ));
     }
 
     public static void saveConfig(File configDir) {
@@ -74,21 +101,36 @@ public class HordeMemberModConfig {
 
     // Classe représentant une composition de horde
     public static class HordeComposition {
+        public int weight;
         public List<HordeMobType> mobTypes;
 
-        HordeComposition(List<HordeMobType> mobTypes) {
+        HordeComposition(int weight, List<HordeMobType> mobTypes) {
+            this.weight = weight;
             this.mobTypes = mobTypes;
         }
     }
 
-    // Classe représentant un type de mob avec un poids
+    // Classe représentant un type de mob avec un poids et un tableau d'armes
     public static class HordeMobType {
         public String id;
         int weight;
+        List<WeaponConfig> weapons;
 
-        HordeMobType(String id, int weight) {
+        HordeMobType(String id, int weight, List<WeaponConfig> weapons) {
             this.id = id;
             this.weight = weight;
+            this.weapons = weapons;
+        }
+    }
+
+    // Classe représentant une arme avec sa probabilité
+    public static class WeaponConfig {
+        public String itemId;
+        public float chance;
+
+        WeaponConfig(String itemId, float chance) {
+            this.itemId = itemId;
+            this.chance = chance;
         }
     }
 }
