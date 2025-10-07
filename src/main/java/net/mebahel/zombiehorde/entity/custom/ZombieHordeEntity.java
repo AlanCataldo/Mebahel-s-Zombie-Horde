@@ -1,6 +1,6 @@
 package net.mebahel.zombiehorde.entity.custom;
 
-import net.mebahel.zombiehorde.util.ModConfig;
+import net.mebahel.zombiehorde.util.ZombieHordeModConfig;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ai.goal.*;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
@@ -116,7 +116,7 @@ public class ZombieHordeEntity extends ZombieEntity {
 
     @Override
     protected boolean isAffectedByDaylight() {
-        if (ModConfig.spawnInDaylight) {
+        if (ZombieHordeModConfig.spawnInDaylight) {
             return false;
         }
         return super.isAffectedByDaylight();
