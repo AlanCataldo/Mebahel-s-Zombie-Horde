@@ -2,8 +2,8 @@ package net.mebahel.zombiehorde.mixin;
 
 import net.mebahel.zombiehorde.entity.ai.BreakGlassGoal;
 import net.mebahel.zombiehorde.entity.ai.ModHordeGoal;
-import net.mebahel.zombiehorde.util.HordeMemberModConfig;
-import net.mebahel.zombiehorde.util.ModConfig;
+import net.mebahel.zombiehorde.config.HordeMemberModConfig;
+import net.mebahel.zombiehorde.config.ZombieHordeModConfig;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ai.goal.GoalSelector;
 import net.minecraft.entity.mob.MobEntity;
@@ -27,11 +27,11 @@ public abstract class AddHordeGoalToEntityMixin {
         if (isEntityInHordeConfig(entityId)) {
             // Utilise un accessor pour obtenir goalSelector et ajoute le ModHordeGoal
             GoalSelector goalSelector = ((MobEntityAccessor) mobEntity).getGoalSelector();
-            if (ModConfig.hordeMemberBreakGlass && ModConfig.hordeMemberBreakFence)
+            if (ZombieHordeModConfig.hordeMemberBreakGlass && ZombieHordeModConfig.hordeMemberBreakFence)
                 goalSelector.add(1, new BreakGlassGoal(mobEntity, true, true));
-            else if (!ModConfig.hordeMemberBreakGlass && ModConfig.hordeMemberBreakFence)
+            else if (!ZombieHordeModConfig.hordeMemberBreakGlass && ZombieHordeModConfig.hordeMemberBreakFence)
                 goalSelector.add(1, new BreakGlassGoal(mobEntity, false, true));
-            else if (ModConfig.hordeMemberBreakGlass && !ModConfig.hordeMemberBreakFence)
+            else if (ZombieHordeModConfig.hordeMemberBreakGlass && !ZombieHordeModConfig.hordeMemberBreakFence)
                 goalSelector.add(1, new BreakGlassGoal(mobEntity, true, false));
             goalSelector.add(4, new ModHordeGoal(mobEntity, 0.93, 0.93));
         }

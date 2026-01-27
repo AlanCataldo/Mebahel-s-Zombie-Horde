@@ -1,15 +1,18 @@
 package net.mebahel.zombiehorde.util;
 
-import net.minecraft.datafixer.DataFixTypes;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.world.PersistentState;
 
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 public class ModDifficultyState extends PersistentState {
     private int difficultyLevel;
 
-    public ModDifficultyState() {
-        this.difficultyLevel = 1; // Valeur par défaut
+    public ModDifficultyState(int difficultyLevel) {
+        this.difficultyLevel = difficultyLevel;
     }
 
     public int getDifficultyLevel() {
@@ -18,27 +21,23 @@ public class ModDifficultyState extends PersistentState {
 
     public void setDifficultyLevel(int difficultyLevel) {
         this.difficultyLevel = difficultyLevel;
-        this.markDirty(); // Marquer comme modifié pour être sauvegardé
+        this.markDirty(); // toujours utile pour forcer la sauvegarde
     }
 
-    public static ModDifficultyState fromNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        ModDifficultyState state = new ModDifficultyState();
-        state.difficultyLevel = nbt.getInt("difficultyLevel");
-        return state;
-    }
-
+    // ✅ nouvelle signature (MC 1.21+)
     @Override
-    public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup lookup) {
         nbt.putInt("difficultyLevel", difficultyLevel);
         return nbt;
     }
 
-    // Méthode pour créer un PersistentState.Type
-    public static PersistentState.Type<ModDifficultyState> createType() {
-        return new PersistentState.Type<>(
-                ModDifficultyState::new, // Supplier pour créer un nouvel état par défaut
-                ModDifficultyState::fromNbt, // BiFunction pour désérialiser depuis NBT
-                DataFixTypes.LEVEL // Type de correction des données
-        );
+    public static ModDifficultyState fromNbt(NbtCompound nbt) {
+        return new ModDifficultyState(nbt.getInt("difficultyLevel"));
     }
+
+    public static final Type<ModDifficultyState> TYPE = new Type<>(
+            () -> new ModDifficultyState(1),
+            (nbt, lookup) -> ModDifficultyState.fromNbt(nbt),
+            null
+    );
 }

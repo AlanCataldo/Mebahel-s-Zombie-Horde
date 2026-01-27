@@ -1,7 +1,7 @@
 package net.mebahel.zombiehorde.mixin;
 
 import net.mebahel.zombiehorde.util.IPatrolData;
-import net.mebahel.zombiehorde.util.ModConfig;
+import net.mebahel.zombiehorde.config.ZombieHordeModConfig;
 import net.minecraft.entity.mob.MobEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,7 +17,7 @@ public abstract class HordeEntityAffectedByDayLightMixin {
         // Vérifie si l'entité implémente IPatrolData et fait partie d'une patrouille
         if (this instanceof IPatrolData patrolData && patrolData.isHordeEntityPatrolling()) {
             // Si la configuration "spawnInDaylight" est true, retourne false
-            if (ModConfig.spawnInDaylight) {
+            if (ZombieHordeModConfig.spawnInDaylight) {
                 cir.setReturnValue(false);
             }
         }

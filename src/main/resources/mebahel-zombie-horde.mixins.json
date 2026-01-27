@@ -7,6 +7,7 @@
     "EntityMixin",
     "HordeEntityAffectedByDayLightMixin",
     "MobEntityAccessor",
+    "MobEntityTemporaryPersistenceMixin",
     "PatrolDataMixin",
     "PatrolDataMobEntityMixin"
   ],
