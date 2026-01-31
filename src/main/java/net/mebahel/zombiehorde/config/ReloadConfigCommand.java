@@ -1,10 +1,8 @@
-package net.mebahel.zombiehorde.command;
+package net.mebahel.zombiehorde.config;
 
 import com.mojang.brigadier.CommandDispatcher;
 import net.fabricmc.loader.api.FabricLoader;
 import net.mebahel.zombiehorde.MebahelZombieHorde;
-import net.mebahel.zombiehorde.util.HordeMemberModConfig;
-import net.mebahel.zombiehorde.util.ZombieHordeModConfig;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 

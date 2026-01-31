@@ -1,4 +1,4 @@
-package net.mebahel.zombiehorde.util;
+package net.mebahel.zombiehorde.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -29,6 +29,8 @@ public class ZombieHordeModConfig {
     public static boolean hordeMemberBreakGlass = true;
     public static boolean hordeMemberBreakFence = true;
     public static boolean showHordeSpawningMessage = true;
+
+    public static int hordeSpawnDistanceFromPlayer = 60;
 
     public static void loadConfig(File configDir) {
         if (!configDir.exists()) configDir.mkdirs();
@@ -101,8 +103,14 @@ public class ZombieHordeModConfig {
                     updated = true;
                 }
 
-                if (data.hordeMemberBonusHealth == null || data.hordeMemberBonusHealth < 0 || data.hordeMemberBonusHealth > 40) {
+                if (data.hordeMemberBonusHealth == null || data.hordeMemberBonusHealth < 0 ||
+                        data.hordeMemberBonusHealth > 800) {
                     data.hordeMemberBonusHealth = 0;
+                    updated = true;
+                }
+
+                if (data.hordeSpawnDistanceFromPlayer == null || data.hordeSpawnDistanceFromPlayer < 0) {
+                    data.hordeSpawnDistanceFromPlayer = 40;
                     updated = true;
                 }
 
@@ -120,6 +128,7 @@ public class ZombieHordeModConfig {
                 hordeMemberBreakGlass = data.hordeMemberBreakGlass;
                 hordeMemberBreakFence = data.hordeMemberBreakFence;
                 showHordeSpawningMessage = data.showHordeSpawningMessage;
+                hordeSpawnDistanceFromPlayer = data.hordeSpawnDistanceFromPlayer;
 
                 if (updated) saveConfig(configDir);
 
@@ -144,7 +153,8 @@ public class ZombieHordeModConfig {
                 hordeMemberBonusHealth,
                 hordeMemberBreakGlass,
                 hordeMemberBreakFence,
-                showHordeSpawningMessage
+                showHordeSpawningMessage,
+                hordeSpawnDistanceFromPlayer
         );
         try (FileWriter writer = new FileWriter(configFile)) {
             GSON.toJson(data, writer);
@@ -165,11 +175,13 @@ public class ZombieHordeModConfig {
         Boolean hordeMemberBreakGlass;
         Boolean hordeMemberBreakFence;
         Boolean showHordeSpawningMessage;
+        Integer hordeSpawnDistanceFromPlayer;
 
         ConfigData(Boolean spawnInDayLight, Boolean enableDifficultySystem, Boolean hordeSpawning,
                    List<Object> hordeSpawnDelay, Float hordeSpawnChance,
                    Integer randomNumberHordeReinforcements, Integer hordeNumber, Integer hordeMemberBonusHealth,
-                   Boolean hordeMemberBreakGlass, Boolean hordeMemberBreakFence, Boolean showHordeSpawningMessage) {
+                   Boolean hordeMemberBreakGlass, Boolean hordeMemberBreakFence, Boolean showHordeSpawningMessage,
+                   Integer hordeSpawnDistanceFromPlayer) {
             this.spawnInDayLight = spawnInDayLight;
             this.enableDifficultySystem = enableDifficultySystem;
             this.hordeSpawning = hordeSpawning;
@@ -181,6 +193,7 @@ public class ZombieHordeModConfig {
             this.hordeMemberBreakGlass = hordeMemberBreakGlass;
             this.hordeMemberBreakFence = hordeMemberBreakFence;
             this.showHordeSpawningMessage = showHordeSpawningMessage;
+            this.hordeSpawnDistanceFromPlayer = hordeSpawnDistanceFromPlayer;
         }
     }
 

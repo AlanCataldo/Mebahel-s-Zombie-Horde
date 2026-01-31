@@ -1,4 +1,4 @@
-package net.mebahel.zombiehorde.util;
+package net.mebahel.zombiehorde.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -13,6 +13,7 @@ import java.util.List;
 public class HordeMemberModConfig {
     private static final String CONFIG_FILE_NAME = MebahelZombieHorde.MOD_ID + "mob_type_config.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+
     public static List<HordeComposition> hordeCompositions = List.of(
             new HordeComposition(
                     1,
@@ -22,9 +23,9 @@ public class HordeMemberModConfig {
                                     30,
                                     0.15f,
                                     List.of(
-                                            new WeaponConfig("minecraft:iron_sword", 0.5f),
-                                            new WeaponConfig("minecraft:stone_sword", 0.3f),
-                                            new WeaponConfig("minecraft:wooden_sword", 0.2f)
+                                            new WeaponConfig("minecraft:iron_sword", 20),
+                                            new WeaponConfig("minecraft:stone_sword", 10),
+                                            new WeaponConfig("minecraft:wooden_sword", 10)
                                     )
                             )
                     )
@@ -69,6 +70,17 @@ public class HordeMemberModConfig {
                             updated = true;
                             System.out.println("[Mebahel's Zombie Horde] Added missing spawnWithWeaponProbability=0.15 to " + mobType.id);
                         }
+
+                        // ✅ correction weights invalides + compat chance->weight
+                        if (mobType.weapons != null) {
+                            for (WeaponConfig w : mobType.weapons) {
+                                if (w.getEffectiveWeight() <= 0) {
+                                    w.weight = 1;
+                                    updated = true;
+                                    System.out.println("[Mebahel's Zombie Horde] Fixed invalid weapon weight for " + w.itemId);
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -81,10 +93,14 @@ public class HordeMemberModConfig {
                     System.out.println("  Horde #" + hordeIndex + " (weight: " + composition.weight + "): Dimensions=" + composition.dimensions);
 
                     for (HordeMobType mobType : composition.mobTypes) {
-                        System.out.println("    - " + mobType.id + " (weight: " + mobType.weight + ")");
+                        System.out.println("    - " + mobType.id + " (weight: " + mobType.weight + ", spawnWithWeaponProbability=" + mobType.spawnWithWeaponProbability + ")");
+
                         if (mobType.weapons != null && !mobType.weapons.isEmpty()) {
+                            int sum = mobType.weapons.stream().mapToInt(WeaponConfig::getEffectiveWeight).sum();
                             for (WeaponConfig weapon : mobType.weapons) {
-                                System.out.println("        * Weapon: " + weapon.itemId + " (chance: " + (weapon.chance * 100) + "%)");
+                                double pct = (weapon.getEffectiveWeight() * 100.0) / Math.max(1, sum);
+                                System.out.printf("        * Weapon: %s (weight: %d ~ %.1f%%)%n",
+                                        weapon.itemId, weapon.getEffectiveWeight(), pct);
                             }
                         }
                     }
@@ -107,7 +123,6 @@ public class HordeMemberModConfig {
         }
     }
 
-
     private static ConfigData createDefaultConfig() {
         return new ConfigData(List.of(
                 new HordeComposition(
@@ -118,8 +133,8 @@ public class HordeMemberModConfig {
                                         30,
                                         0.15f,
                                         List.of(
-                                                new WeaponConfig("minecraft:iron_sword", 0.65f),
-                                                new WeaponConfig("minecraft:stone_sword", 0.35f)
+                                                new WeaponConfig("minecraft:iron_sword", 6),
+                                                new WeaponConfig("minecraft:stone_sword", 4)
                                         )
                                 )
                         )
@@ -174,14 +189,37 @@ public class HordeMemberModConfig {
         }
     }
 
-    // Classe représentant une arme avec sa probabilité
+    // ✅ Classe représentant une arme avec un poids (et compat avec l'ancien champ "chance")
     public static class WeaponConfig {
         public String itemId;
-        public float chance;
 
+        // Nouveau champ (préféré)
+        public int weight = 1;
+
+        // Ancien champ (compat JSON existant)
+        public Float chance = null;
+
+        public int getEffectiveWeight() {
+            if (weight > 0) return weight;
+
+            // Compat: convertit chance (0..1) en poids (1..100+)
+            if (chance != null && chance > 0) {
+                return Math.max(1, Math.round(chance * 100f));
+            }
+
+            return 1;
+        }
+
+        WeaponConfig(String itemId, int weight) {
+            this.itemId = itemId;
+            this.weight = weight;
+        }
+
+        // Optionnel: garde un ctor float si tu l'utilises encore quelque part
         WeaponConfig(String itemId, float chance) {
             this.itemId = itemId;
             this.chance = chance;
+            this.weight = 0; // forcera la conversion via getEffectiveWeight()
         }
     }
 }

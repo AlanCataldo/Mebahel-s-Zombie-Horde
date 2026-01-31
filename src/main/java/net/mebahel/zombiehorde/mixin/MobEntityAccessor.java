@@ -7,6 +7,14 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(MobEntity.class)
 public interface MobEntityAccessor {
+
     @Accessor("goalSelector")
     GoalSelector getGoalSelector();
+
+    // dans MobEntityAccessor.java
+    @Accessor("persistent")
+    void mebahel$setPersistentFlag(boolean value);
+
+    @Accessor("persistent")
+    boolean mebahel$getPersistentFlag();
 }

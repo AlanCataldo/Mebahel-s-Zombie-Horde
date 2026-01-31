@@ -1,7 +1,7 @@
 package net.mebahel.zombiehorde.mixin;
 
 import net.mebahel.zombiehorde.util.IPatrolData;
-import net.mebahel.zombiehorde.util.ZombieHordeModConfig;
+import net.mebahel.zombiehorde.config.ZombieHordeModConfig;
 import net.minecraft.entity.mob.MobEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

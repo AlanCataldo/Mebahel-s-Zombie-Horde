@@ -2,8 +2,8 @@ package net.mebahel.zombiehorde.mixin;
 
 import net.mebahel.zombiehorde.entity.ai.BreakGlassGoal;
 import net.mebahel.zombiehorde.entity.ai.ModHordeGoal;
-import net.mebahel.zombiehorde.util.HordeMemberModConfig;
-import net.mebahel.zombiehorde.util.ZombieHordeModConfig;
+import net.mebahel.zombiehorde.config.HordeMemberModConfig;
+import net.mebahel.zombiehorde.config.ZombieHordeModConfig;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ai.goal.GoalSelector;
 import net.minecraft.entity.mob.MobEntity;

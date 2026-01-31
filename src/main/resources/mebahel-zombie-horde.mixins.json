@@ -6,6 +6,7 @@
     "AddHordeGoalToEntityMixin",
     "HordeEntityAffectedByDayLightMixin",
     "MobEntityAccessor",
+    "MobEntityTemporaryPersistenceMixin",
     "PatrolDataMixin",
     "PatrolDataMobEntityMixin"
   ],
