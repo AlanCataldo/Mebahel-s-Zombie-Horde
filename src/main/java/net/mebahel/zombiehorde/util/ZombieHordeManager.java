@@ -171,11 +171,15 @@ public class ZombieHordeManager {
     private static void checkNetherVisit(ServerWorld world, ModDifficultyState difficultyState) {
         List<ServerPlayerEntity> players = world.getPlayers();
 
-        for (ServerPlayerEntity player : players) {
-            if (player.getAdvancementTracker()
-                    .getProgress(world.getServer().getAdvancementLoader().get(new Identifier("minecraft", "nether/root")))
-                    .isDone()) {
+        Identifier netherRootId = new Identifier("minecraft", "nether/root");
+        var advancement = world.getServer().getAdvancementLoader().get(netherRootId);
 
+        if (advancement == null) {
+            return;
+        }
+
+        for (ServerPlayerEntity player : players) {
+            if (player.getAdvancementTracker().getProgress(advancement).isDone()) {
                 int difficultyLevel = 2;
                 worldDifficultyLevels.put(world, difficultyLevel);
                 difficultyState.setDifficultyLevel(difficultyLevel);

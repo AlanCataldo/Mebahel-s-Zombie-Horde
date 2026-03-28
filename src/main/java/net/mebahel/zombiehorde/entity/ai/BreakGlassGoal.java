@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 public class BreakGlassGoal extends Goal {
+    private static final int BREAK_RANGE = 3;
     private final MobEntity zombie;
     private final boolean hordeMemberBreakFence;
     private final boolean hordeMemberBreakGlass;
@@ -132,7 +133,7 @@ public class BreakGlassGoal extends Goal {
 
         // Check up to 10 blocks in the direction the zombie is facing, from top to bottom
         for (int y = 2; y >= -2; y--) { // Start from 2 blocks above and go down to 2 blocks below
-            for (int i = 1; i <= 2; i++) {
+            for (int i = 1; i <= BREAK_RANGE; i++) {
                 BlockPos pos = currentPos.offset(facing, i).up(y);
                 if (isGlassOrBreakableBlock(pos)) { // Utilisation de la nouvelle méthode
                     return pos;
