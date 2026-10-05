@@ -14,23 +14,7 @@ public class HordeMemberModConfig {
     private static final String CONFIG_FILE_NAME = MebahelZombieHorde.MOD_ID + "mob_type_config.json";
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    public static List<HordeComposition> hordeCompositions = List.of(
-            new HordeComposition(
-                    1,
-                    List.of("minecraft:overworld"), // ✅ par défaut : overworld
-                    List.of(
-                            new HordeMobType("minecraft:zombie",
-                                    30,
-                                    0.15f,
-                                    List.of(
-                                            new WeaponConfig("minecraft:iron_sword", 20),
-                                            new WeaponConfig("minecraft:stone_sword", 10),
-                                            new WeaponConfig("minecraft:wooden_sword", 10)
-                                    )
-                            )
-                    )
-            )
-    );
+    public static List<HordeComposition> hordeCompositions = createDefaultConfig().hordeCompositions;
 
     public static void loadConfig(File configDir) {
         if (!configDir.exists()) {
@@ -124,22 +108,41 @@ public class HordeMemberModConfig {
     }
 
     private static ConfigData createDefaultConfig() {
-        return new ConfigData(List.of(
-                new HordeComposition(
-                        1,
-                        List.of("minecraft:overworld"),
-                        List.of(
-                                new HordeMobType("minecraft:zombie",
-                                        30,
-                                        0.15f,
-                                        List.of(
-                                                new WeaponConfig("minecraft:iron_sword", 6),
-                                                new WeaponConfig("minecraft:stone_sword", 4)
-                                        )
-                                )
-                        )
-                )
-        ));
+        return new ConfigData(createDefaultCompositions());
+    }
+
+    static List<HordeComposition> createDefaultCompositions() {
+        List<String> overworld = List.of("minecraft:overworld");
+        List<String> aridBiomes = List.of("minecraft:desert", "minecraft:badlands",
+                "minecraft:eroded_badlands", "minecraft:wooded_badlands");
+        ArmorConfig noArmor = new ArmorConfig(List.of(), List.of(), List.of(), List.of());
+        ArmorConfig eliteArmor = new ArmorConfig(
+                List.of(new ArmorPieceConfig("minecraft:iron_helmet", 3), new ArmorPieceConfig("minecraft:chainmail_helmet", 1)),
+                List.of(new ArmorPieceConfig("minecraft:iron_chestplate", 3), new ArmorPieceConfig("minecraft:chainmail_chestplate", 1)),
+                List.of(new ArmorPieceConfig("minecraft:iron_leggings", 3), new ArmorPieceConfig("minecraft:chainmail_leggings", 1)),
+                List.of(new ArmorPieceConfig("minecraft:iron_boots", 3), new ArmorPieceConfig("minecraft:chainmail_boots", 1))
+        );
+
+        return List.of(
+                new HordeComposition(8, overworld, List.of(
+                        new HordeMobType("minecraft:zombie", 1, 0.15f, List.of(), 0f, noArmor)
+                )),
+                new HordeComposition(1, overworld, List.of(
+                        new HordeMobType("minecraft:zombie", 1, 1f, List.of(
+                                new WeaponConfig("minecraft:iron_sword", 3),
+                                new WeaponConfig("minecraft:iron_axe", 1)
+                        ), 0.65f, eliteArmor)
+                )),
+                new HordeComposition(8, overworld, aridBiomes, List.of(
+                        new HordeMobType("minecraft:husk", 1, 0.15f, List.of(), 0f, noArmor)
+                )),
+                new HordeComposition(1, overworld, aridBiomes, List.of(
+                        new HordeMobType("minecraft:husk", 1, 1f, List.of(
+                                new WeaponConfig("minecraft:iron_sword", 3),
+                                new WeaponConfig("minecraft:iron_axe", 1)
+                        ), 0.65f, eliteArmor)
+                ))
+        );
     }
 
     public static void saveConfig(File configDir) {
@@ -165,11 +168,17 @@ public class HordeMemberModConfig {
     public static class HordeComposition {
         public int weight;
         public List<String> dimensions; // ✅ Nouvel attribut
+        public List<String> biomes;
         public List<HordeMobType> mobTypes;
 
         HordeComposition(int weight, List<String> dimensions, List<HordeMobType> mobTypes) {
+            this(weight, dimensions, List.of(), mobTypes);
+        }
+
+        HordeComposition(int weight, List<String> dimensions, List<String> biomes, List<HordeMobType> mobTypes) {
             this.weight = weight;
             this.dimensions = dimensions;
+            this.biomes = biomes;
             this.mobTypes = mobTypes;
         }
     }
@@ -180,12 +189,46 @@ public class HordeMemberModConfig {
         public int weight;
         public float spawnWithWeaponProbability;
         public List<WeaponConfig> weapons;
+        public Float spawnWithArmorProbability;
+        public ArmorConfig armor;
 
         HordeMobType(String id, int weight, float spawnWithWeaponProbability, List<WeaponConfig> weapons) {
+            this(id, weight, spawnWithWeaponProbability, weapons, null, null);
+        }
+
+        HordeMobType(String id, int weight, float spawnWithWeaponProbability, List<WeaponConfig> weapons,
+                     Float spawnWithArmorProbability, ArmorConfig armor) {
             this.id = id;
             this.weight = weight;
             this.spawnWithWeaponProbability = spawnWithWeaponProbability;
             this.weapons = weapons;
+            this.spawnWithArmorProbability = spawnWithArmorProbability;
+            this.armor = armor;
+        }
+    }
+
+    public static class ArmorConfig {
+        public List<ArmorPieceConfig> head;
+        public List<ArmorPieceConfig> chest;
+        public List<ArmorPieceConfig> legs;
+        public List<ArmorPieceConfig> feet;
+
+        ArmorConfig(List<ArmorPieceConfig> head, List<ArmorPieceConfig> chest,
+                    List<ArmorPieceConfig> legs, List<ArmorPieceConfig> feet) {
+            this.head = head;
+            this.chest = chest;
+            this.legs = legs;
+            this.feet = feet;
+        }
+    }
+
+    public static class ArmorPieceConfig {
+        public String itemId;
+        public int weight;
+
+        ArmorPieceConfig(String itemId, int weight) {
+            this.itemId = itemId;
+            this.weight = weight;
         }
     }
 

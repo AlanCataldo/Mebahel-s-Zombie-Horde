@@ -104,6 +104,11 @@ public class ZombieHordeConfigReadmeGenerator {
             sb.append("    Base distance (in blocks) from the chosen player for spawning the horde.\n");
             sb.append("    Your code then adds a random extra offset (0..19) to X and Z.\n\n");
 
+            sb.append("Overworld spawn placement:\n");
+            sb.append("  The manager tries up to 16 nearby surface positions.\n");
+            sb.append("  The leader and each follower need solid ground, free space, and a visible sky.\n");
+            sb.append("  If no suitable position is found, that spawn attempt is skipped.\n\n");
+
             sb.append("Validation rules applied at load:\n");
             sb.append("  - hordeSpawnChance must be within [0..1]\n");
             sb.append("  - hordeNumber must be within [1..20]\n");
@@ -133,6 +138,14 @@ public class ZombieHordeConfigReadmeGenerator {
             sb.append("    Example: [\"minecraft:overworld\", \"minecraft:the_nether\"]\n");
             sb.append("    If missing/empty, the loader auto-fills [\"minecraft:overworld\"].\n\n");
 
+            sb.append("  - biomes (string[] of biome ids, optional)\n");
+            sb.append("    Restricts this composition to the biome at the horde leader's spawn position.\n");
+            sb.append("    Example: [\"minecraft:desert\"].\n");
+            sb.append("    If missing/empty, all biomes in the allowed dimensions are eligible.\n");
+            sb.append("    Matching biome-specific compositions take priority over unrestricted ones.\n");
+            sb.append("    Defaults: zombies elsewhere in the Overworld; husks in deserts and badlands.\n");
+            sb.append("    Normal hordes have weight 8; armed and armored elite hordes have weight 1.\n\n");
+
             sb.append("  - mobTypes (array)\n");
             sb.append("    List of mobs that can spawn for this composition.\n\n");
 
@@ -150,6 +163,17 @@ public class ZombieHordeConfigReadmeGenerator {
             sb.append("  - weapons (array, optional)\n");
             sb.append("    Weapon pool used when the mob spawns with a weapon.\n");
             sb.append("    Each entry is weighted.\n\n");
+
+            sb.append("  - spawnWithArmorProbability (float 0..1, optional)\n");
+            sb.append("    Independent chance for each armor slot when 'armor' is configured.\n");
+            sb.append("    If absent, each slot uses 0.06 * difficulty level.\n\n");
+
+            sb.append("  - armor (object, optional)\n");
+            sb.append("    Weighted armor lists by slot: head, chest, legs, feet.\n");
+            sb.append("    Each entry has itemId and weight (int > 0).\n");
+            sb.append("    Example: \"head\": [{\"itemId\": \"minecraft:iron_helmet\", \"weight\": 2}].\n");
+            sb.append("    Missing or empty slot lists leave that slot empty.\n");
+            sb.append("    If armor is absent, legacy random iron armor applies to all four slots.\n\n");
 
             sb.append("weapons[] fields:\n");
             sb.append("  - itemId (string)\n");
