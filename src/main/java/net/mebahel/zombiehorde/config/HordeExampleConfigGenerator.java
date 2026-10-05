@@ -34,45 +34,7 @@ public class HordeExampleConfigGenerator {
         }
 
         // 2) Otherwise: create default example
-        List<HordeComposition> exampleHordes = List.of(
-                // Horde OVERWORLD
-                new HordeComposition(1, List.of("minecraft:overworld"), List.of(
-                        new HordeMobType("minecraft:zombie", 40, 0.8f, List.of(
-                                new WeaponConfig("minecraft:iron_sword", 5),
-                                new WeaponConfig("minecraft:stone_sword", 3),
-                                new WeaponConfig("minecraft:wooden_sword", 2)
-                        )),
-                        new HordeMobType("minecraft:skeleton", 30, 1.0f, List.of(
-                                new WeaponConfig("minecraft:bow", 3),
-                                new WeaponConfig("minecraft:iron_axe", 2),
-                                new WeaponConfig("minecraft:stone_axe", 2)
-                        ))
-                )),
-
-                // Horde NETHER
-                new HordeComposition(1, List.of("minecraft:the_nether"), List.of(
-                        new HordeMobType("minecraft:pillager", 35, 1.0f, List.of(
-                                new WeaponConfig("minecraft:crossbow", 1)
-                        )),
-                        new HordeMobType("minecraft:vindicator", 25, 1.0f, List.of(
-                                new WeaponConfig("minecraft:iron_axe", 1)
-                        )),
-                        new HordeMobType("minecraft:evoker", 15, 0.0f, List.of()),
-                        new HordeMobType("minecraft:ravager", 5, 0.0f, List.of())
-                )),
-
-                // Horde END
-                new HordeComposition(2, List.of("minecraft:the_end"), List.of(
-                        new HordeMobType("minecraft:wither_skeleton", 40, 0.7f, List.of(
-                                new WeaponConfig("minecraft:stone_sword", 4),
-                                new WeaponConfig("minecraft:iron_axe", 3)
-                        )),
-                        new HordeMobType("minecraft:stray", 20, 0.5f, List.of(
-                                new WeaponConfig("minecraft:bow", 1)
-                        )),
-                        new HordeMobType("minecraft:blaze", 15, 0.0f, List.of()) // no weapon
-                ))
-        );
+        List<HordeComposition> exampleHordes = HordeMemberModConfig.createDefaultCompositions();
 
         try (FileWriter writer = new FileWriter(exampleFile)) {
             GSON.toJson(new ConfigData(exampleHordes), writer);
