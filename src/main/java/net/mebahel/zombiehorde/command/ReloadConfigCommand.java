@@ -23,6 +23,7 @@ public class ReloadConfigCommand {
 
                                     ZombieHordeModConfig.loadConfig(configDir);
                                     HordeMemberModConfig.loadConfig(configDir);
+                                    net.mebahel.zombiehorde.config.HordeConfigSync.syncAll(context.getSource().getServer());
 
                                     context.getSource().sendFeedback(() ->
                                             Text.literal("[Mebahel's Zombie Horde] Configuration successfully reloaded."), true);

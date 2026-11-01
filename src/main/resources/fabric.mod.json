@@ -3,7 +3,7 @@
 	"id": "mebahel-zombie-horde",
 	"version": "${version}",
 	"name": "Mebahel Zombie Horde",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Turn ordinary nights into survival events with coordinated zombie hordes, shared aggression, destructive AI, biome-aware compositions, progressive difficulty, and extensive configuration.",
 	"authors": [
 		"Mebahel"
 	],
@@ -31,7 +31,8 @@
 		"fabricloader": ">=0.16.2",
 		"minecraft": ">=1.21 <1.21.2",
 		"java": ">=21",
-		"fabric-api": "*"
+		"fabric-api": "*",
+		"mebahels-api": ">=1.1.5-fabric-1.21.1"
 	},
 	"suggests": {
 		"another-mod": "*"

@@ -49,7 +49,7 @@ public class HordeMemberModConfig {
                     }
 
                     for (HordeMobType mobType : composition.mobTypes) {
-                        if (mobType.spawnWithWeaponProbability <= 0) {
+                        if (!Float.isFinite(mobType.spawnWithWeaponProbability) || mobType.spawnWithWeaponProbability < 0 || mobType.spawnWithWeaponProbability > 1) {
                             mobType.spawnWithWeaponProbability = 0.15f;
                             updated = true;
                             System.out.println("[Mebahel's Zombie Horde] Added missing spawnWithWeaponProbability=0.15 to " + mobType.id);
@@ -166,6 +166,7 @@ public class HordeMemberModConfig {
 
     // Classe représentant une composition de horde
     public static class HordeComposition {
+        public String name;
         public int weight;
         public List<String> dimensions; // ✅ Nouvel attribut
         public List<String> biomes;

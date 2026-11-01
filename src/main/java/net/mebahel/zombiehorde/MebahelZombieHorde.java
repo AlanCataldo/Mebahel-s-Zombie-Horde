@@ -25,6 +25,10 @@ public class MebahelZombieHorde implements ModInitializer {
 		File configDir = new File(FabricLoader.getInstance().getConfigDir().toFile(), MebahelZombieHorde.MOD_ID);
 		ZombieHordeModConfig.loadConfig(configDir);
 		HordeMemberModConfig.loadConfig(configDir);
+		net.mebahel.zombiehorde.config.HordeConfigSync.register();
+		net.mebahelsapi.config.MebahelServerConfigRegistry.register(MOD_ID,
+				net.mebahel.zombiehorde.config.HordeConfigEditor.CODEC,
+				new net.mebahel.zombiehorde.config.HordeConfigEditor());
 		HordeExampleConfigGenerator.generate(configDir);
 		ZombieHordeConfigReadmeGenerator.generate(configDir);
 		ZombieHordeManager.register();
